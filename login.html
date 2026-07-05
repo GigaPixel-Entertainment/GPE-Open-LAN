@@ -61,7 +61,6 @@
                 } else {
                     pwdEntry.type = "password"
                     showPwdImg.src = "Media/eyeOpen.png"
-                    //showPwdBtn.textContent = "👁️"
                 }
             }
         </script>
@@ -218,7 +217,6 @@
                     }
 
                     ws.onmessage = (event) => {
-                        console.log('Message from server:', event);
                         const resp = JSON.parse(event.data)
 
                         if (resp["type"] == "encrypt-key-xch") {
@@ -240,10 +238,11 @@
                                 decryptAES(resp["iv"], resp["body"], sharedSecretBytes).then((data) => {
                                     respBody = JSON.parse(data)
 
-                                    console.log(respBody)
                                     if (respBody["type"] == "loginSuccess") {
                                         window.location.assign(protocol + "//" + domainURL + respBody["redirect"])
                                     } else if (respBody["type"] == "loginFailed") {
+                                        submitBtn.value = "login"
+                                        submitBtn.disabled = false
                                         setError("Login Failed", "Incorrect username or password. Please try again.")
                                     }
                                 })
@@ -254,12 +253,11 @@
                     };
 
                     ws.onerror = (error) => {
-                        console.error('WebSocket Error:', error);
-                        
+                        console.error("WebSocket Error: " + error);
                     };
 
                     ws.onclose = (event) => {
-                        console.log('Connection closed:', event.reason);
+                        console.log("Connection closed:", event.reason);
                         console.log("Attempting reconnect...")
                         window.location.reload()
                     };

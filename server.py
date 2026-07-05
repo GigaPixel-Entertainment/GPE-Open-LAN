@@ -37,6 +37,7 @@ from websockets.asyncio.server import serve, broadcast, ServerConnection
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from http.server import BaseHTTPRequestHandler
+from cryptography.fernet import Fernet
 from http import cookies
 from io import BytesIO
 import traceback
@@ -66,9 +67,16 @@ NUM_ENCRYPT_ROUNDS = 15
 CWD = pathlib.Path(__file__).resolve().parent
 CA_CERT_DIR = CWD / "CA_CERT"
 CHATS_DIR = CWD / "Chats/"
+CHATS_KEY = CHATS_DIR / "meta.key"
 CSS_DIR = CWD / "CSS/"
 MEDIA_DIR = CWD / "Media/"
 USERS_DIR = CWD / "Users/"
+
+PRIVATE_DIRS = [
+    USERS_DIR,
+    CHATS_DIR,
+    CA_CERT_DIR
+]
 
 FILEEXT_TO_MIME = {
     ".png": "image/png",
@@ -86,11 +94,13 @@ PUB_KEY = PRIV_KEY.public_key().public_bytes(
     encoding=serialization.Encoding.X962,
     format=serialization.PublicFormat.UncompressedPoint
 )
-print("Key generated successfully!")
+print("Key generated successfully")
 
 users = []
 
 chats = []
+chatKey = None
+fernet = None
 
 class HTTPRequestParser(BaseHTTPRequestHandler):
     def __init__(self, request_bytes):
@@ -104,8 +114,18 @@ class HTTPRequestParser(BaseHTTPRequestHandler):
         self.error_code = code
         self.error_message = message
 
+def genChatKey():
+    key = Fernet.generate_key()
+    with open(CHATS_KEY, "wb") as f:
+        f.write(key)
+        f.close()
+
 def loadUsers():
     print("Loading users")
+
+    if not USERS_DIR.exists():
+        USERS_DIR.mkdir()
+    
 
     for usr in USERS_DIR.iterdir():
         if usr.is_file():
@@ -113,19 +133,112 @@ def loadUsers():
                 users.append(msgpack.unpackb(f.read()))
                 f.close()
     
-    print("Users loaded successfully")
+    print("Users loaded")
 
 def loadChats():
+    global chatKey
+    global fernet
+
     print("Loading chats")
 
-    for chat in CHATS_DIR.iterdir():
-        if chat.is_file():
-            with open(chat, "rb") as f:
-                chats.append(msgpack.unpackb(f.read()))
-                f.close()
-    
-    print("Chats loaded successfully")
+    if not CHATS_DIR.exists():
+        CHATS_DIR.mkdir()
 
+    if not CHATS_KEY.exists():
+        print("Generating new chat key!")
+        genChatKey()
+    
+    print("Reading chat key")
+    with open(CHATS_KEY, "rb") as f:
+        chatKey = f.read()
+        f.close()
+    
+    fernet = Fernet(chatKey)
+    
+    for chat in CHATS_DIR.iterdir():
+        if chat.is_file() and chat.suffix == ".enc":
+            try:
+                with open(chat, "rb") as f:
+                    fileContents = msgpack.unpackb(f.read())
+                    metadata = fileContents["meta"]
+                    messages = fileContents["messages"]
+
+                    for msg in messages:
+                        msg["content"] = fernet.decrypt(msg["content"]).decode("utf-16")
+
+                    chats.append({"CID": metadata["CID"], "messages": messages})
+                    f.close()
+            except Exception:
+                traceback.print_exc()
+                print(f"Failed to load chat! {chat.name}")
+    
+    print("Chats loaded")
+
+def saveChats():
+    print("Saving chats")
+
+    for chat in chats:
+        try:
+            chatID = chat["CID"]
+            with open(CHATS_DIR / f"{chatID}.enc", "wb") as f:
+                metadata = {"CID": chatID}
+                messages = []
+
+                for msg in chat["messages"]:
+                    messages.append({"time":msg["time"], "content":fernet.encrypt(msg["content"].encode("utf-16")), "user":msg["user"]})
+
+                f.write(msgpack.packb({"meta":metadata,"messages":messages}))
+                f.close()
+        except Exception:
+            traceback.print_exc()
+            print(f"Failed to save chat! {chat}")
+    
+    print("Chats saved")
+        
+def getUsernameFromAuthToken(token):
+    for username, tk in VALID_TOKENS.items():
+        if tk["TOKEN"] == token:
+            return username
+    
+    return None
+
+def getUserInfoFromUsername(username):
+    for user in users:
+        if user["USRNAME"] == username:
+            return user
+        
+    return None
+
+def getUserInfoFromToken(token):
+    username = getUsernameFromAuthToken(token)
+
+    if username == None:
+        return None
+    
+    return getUserInfoFromUsername(username)
+
+def getChatFromCID(CID):
+    for chat in chats:
+        if chat["CID"] == CID:
+            return chat
+    
+    return None
+
+def tokenInChat(token, CID):
+    chat = getChatFromCID(CID)
+
+    if chat == None:
+        return False
+
+    userInfo = getUserInfoFromToken(token)
+
+    if userInfo == None:
+        return False
+    
+    if not CID in userInfo["Chats"]:
+        return False
+    
+    return True
 
 def getIpAddrs():
     ip_list = []
@@ -196,8 +309,9 @@ def closeSocket(sk: socket.socket):
 def isSafePath(path: pathlib.Path):
     reqPath = path.resolve()
 
-    if CA_CERT_DIR.resolve() in reqPath.parents:
-        return False
+    for privDir in PRIVATE_DIRS:
+        if privDir.resolve() in reqPath.parents:
+            return False
 
     if CWD.resolve() in reqPath.parents:
         return True
@@ -296,6 +410,13 @@ async def wsSendEncrypted(ws: ServerConnection, data: str):
 
     await ws.send(json.dumps({"encryption":"AES","iv":iv.hex(),"body":ciphertext.hex()}))
 
+async def checkAuthTokenEncrypted(ws: ServerConnection, authToken: str):
+    if not isValidToken(authToken):
+        await wsSendEncrypted(ws, json.dumps({"type":"auth_expired"}))
+        await ws.close()
+        return False
+    return True
+
 async def wsHandler(ws: ServerConnection):
     WS_CLIENTS.add(ws)
 
@@ -314,6 +435,7 @@ async def wsHandler(ws: ServerConnection):
                 setattr(ws, "secretKey", PRIV_KEY.exchange(ec.ECDH(), clientKey))
 
                 await ws.send(json.dumps({"type":"encrypt-key-xch", "publicKey": PUB_KEY.hex()}))
+                continue
             
             if "encryption" in msgDecoded and msgDecoded["encryption"] == "AES":
                 key = getattr(ws, "secretKey", None)
@@ -322,11 +444,7 @@ async def wsHandler(ws: ServerConnection):
                     raise ConnectionRefusedError
 
                 decryptor = Cipher(algorithms.AES256(key), modes.GCM(bytes.fromhex(msgDecoded["iv"]))).decryptor()
-                decryptedText = decryptor.update(bytes.fromhex(msgDecoded["body"]))
-                lastBrace = decryptedText.rfind(b"}")
-
-                if lastBrace != -1:
-                    decryptedText = decryptedText[:lastBrace + 1]
+                decryptedText = decryptor.update(bytes.fromhex(msgDecoded["body"]))[:-16]
                 
                 decryptedBody = json.loads(decryptedText.decode("utf-8"))
 
@@ -345,13 +463,41 @@ async def wsHandler(ws: ServerConnection):
                     
                     if not found:
                         await wsSendEncrypted(ws, json.dumps({"type":"loginFailed"}))
+                
+                if decryptedBody["type"] == "reqUser":
+                    if await checkAuthTokenEncrypted(ws, authToken):
+                        userinfo = getUserInfoFromToken(authToken)
 
+                        if userinfo == None:
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqUserFailed", "message": "User not found!"}))
+                            continue
+                        
+                        await wsSendEncrypted(ws, json.dumps({
+                            "type": "reqUserSuccess",
+                            "username": userinfo["USRNAME"],
+                            "UID": userinfo["UID"],
+                            "friends": userinfo["Friends"],
+                            "chats": userinfo["Chats"]
+                        }))
+                    else:
+                        break
 
+                if decryptedBody["type"] == "reqChat":
+                    if await checkAuthTokenEncrypted(ws, authToken):
+                        if not tokenInChat(authToken, decryptedBody["CID"]):
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"User not in chat!"}))
+                            continue
+                        
+                        chat = getChatFromCID(decryptedBody["CID"])
 
-            #if not isValidToken(authToken):
-            #    await ws.send(json.dumps({"type":"auth_expired"}), text=True)
-            #    await ws.close()
-            #    break
+                        if chat == None:
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"Chat not found!"}))
+                            continue
+
+                        await wsSendEncrypted(ws, json.dumps({"type":"reqChatSuccess", "chat": chat}))
+                    else:
+                        break
+                continue
             
 
     except Exception:
@@ -376,7 +522,7 @@ async def wsListen(ipAddrs, context, shutdownEvent):
         servers.append(serve(wsHandler, addr, WS_PORT, process_request=getAuth))
         print(f"ws://{addr}/{WS_PORT}")
 
-    print("Websockets running!")
+    print("Websockets running")
     
     await asyncio.gather(*servers, shutdownEvent.wait())
 
@@ -395,7 +541,7 @@ if __name__ == "__main__":
     ipAddrs = getIpAddrs()
     
     if len(ipAddrs) == 0:
-        print("No valid network interfaces found! Please connect to a network!")
+        print("No valid network interfaces found! Please connect to a network")
         sys.exit(-1)
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -417,6 +563,8 @@ if __name__ == "__main__":
     wsThread.start()
 
     asyncio.run_coroutine_threadsafe(wsListen(ipAddrs, context, wsShutdownEvent), wsLoop)
+
+    print("HTTP Primed and ready to go")
     
     while True:
         try:
@@ -468,5 +616,8 @@ if __name__ == "__main__":
         print("Forcibly shutting down Websocket thread!")
         wsLoop.close()
 
+    print("Shutting down sockets")
     for sk in socketList:
         sk.close()
+
+    saveChats()

@@ -17,6 +17,7 @@
                 --acc3: #3e84c5;
                 --acc4: #0c273f;
                 --acc5: #214685;
+                --acc6: #3e77d7;
                 --text: #FFFFFF;
                 --text2: #cee1f3;
                 --placeholder: #BBBBBB;
@@ -42,6 +43,7 @@
                 color: white;
                 font-family: "Fire Code", monospace;
                 font-size: small;
+                z-index: 99;
             }
 
             footer > a {
@@ -81,21 +83,12 @@
                 background-color: var(--bg);
             }
 
-            #friendsShadow {
-                position: absolute;
-                top: 0;
-                right: 0;
-                width: 20%;
-                height: 100%;
-                box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
-            }
-
             #friendsHeader {
                 position: absolute;
                 display: flex;
                 top: 0;
                 right: 0;
-                width: 20%;
+                width: 100%;
                 height: 10%;
                 background-color: var(--highlight);
                 justify-content: center;
@@ -119,8 +112,8 @@
 
             #friendsList {
                 position: absolute;
-                width: 20%;
-                height: 100%;
+                width: 100%;
+                height: 90%;
                 background-color: var(--acc3);
                 right: 0;
                 top: 10%;
@@ -133,25 +126,87 @@
             #textEntryWrapper {
                 position: absolute;
                 width: 80%;
+                height: fit-content;
                 background-color: var(--acc);
-                bottom: 5%;
+                bottom: 2.5%;
                 right: 7.5%;
-                
+                padding: 0;
             }
 
             #textEntry {
-                width: calc(100% - 0.75em);
-                font-size: 2em;
+                width: calc(100% - 1em);
+                font-size: 1.5em;
                 margin: .25em;
+                margin-bottom: 0;
+                padding: .25em;
                 border: none;
                 background-color: var(--acc5);
                 color: var(--text);
                 outline: none;
+                max-height: 16vh;
+                field-sizing: content;
+                resize: none;
             }
 
             #textEntry::placeholder {
-                color: var(--bg);
+                color: var(--acc4);
                 font-style: italic;
+            }
+
+            #friendsListWrapper {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 20%;
+                height: 100%;
+                box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
+                transform: translateX(100%);
+                transition: transform 500ms ease-in-out;
+            }
+
+            #toggleFriendsList {
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                transform: translate(-90%, 100%);
+                width: 20%;
+                font-size: 2em;
+                border: none;
+                border-radius: 0;
+                background-color: var(--acc6);
+                font-weight: 700;
+                text-align: center;
+                cursor: pointer;
+            }
+
+            #loadingOverlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                background-color: var(--bg);
+                width: 100%;
+                height: 100%;
+                z-index: 98;
+                cursor: wait;
+
+                transition: opacity 0.5s linear;
+            }
+
+            #loadingOverlay > img {
+                position: absolute;
+                max-width: 50%;
+                max-height: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            #loadingOverlay > p {
+                position: absolute;
+                bottom: 10%;
+                width: 100%;
+                text-align: center;
+                font-size: 2em;
             }
 
             .font {
@@ -197,16 +252,23 @@
 
         </div>
         <div id="textEntryWrapper">
-            <input type="text" placeholder="type a message..." id="textEntry" class="font">
+            <textarea placeholder="type a message..." id="textEntry" class="font"></textarea>
         </div>
 
-        <div id="friendsShadow"></div>
-        <div id="friendsHeader">
-            <img src="Media/FriendsIcon.png">
-            <p class="font black">friends</p>
+        <div id="friendsListWrapper">
+            <div id="friendsHeader">
+                <img src="Media/FriendsIcon.png">
+                <p class="font black">friends (0)</p>
+                <button id="toggleFriendsList" class="font white" onclick="hideFriendsList()"><</button>
+            </div>
+            <div id="friendsList" class="scroll">
+                <p class="font white">active messages</p>
+            </div>
         </div>
-        <div id="friendsList" class="scroll">
-            <p class="font white">active messages</p>
+        
+        <div id="loadingOverlay">
+            <img src="Media/Logo.png">
+            <p class="font white" id="loadingText">Connecting to server...</p>
         </div>
     </body>
     <footer>
@@ -214,7 +276,28 @@
     </footer>
 
     <script>
+        // Misc UI
+        const friendsListWrapper = document.getElementById("friendsListWrapper")
+        const toggleFriendsList = document.getElementById("toggleFriendsList")
+
+        var friendsListShown = false
+        function hideFriendsList() {
+            if (friendsListShown) {
+                friendsListWrapper.style.transform = "translateX(100%)"
+                toggleFriendsList.textContent = "<"
+            } else {
+                friendsListWrapper.style.transform = "translateX(0%)"
+                toggleFriendsList.textContent = ">"
+            }
+
+            friendsListShown = !friendsListShown
+        }
+    </script>
+
+    <script>
             // Login
+            const loadingText = document.getElementById("loadingText")
+
             const protocol = window.location.protocol
             const domainURL = window.location.host
             const WsProtocol = protocol == "http:" ? "ws:" : "wss:"
@@ -222,14 +305,8 @@
             var wsPort = WsProtocol == "ws:" ? 33334 : 33335
             var sharedSecretBytes = null
             var encrypted = false
-
-            if (protocol == "http:") {
-                document.getElementById("httpNotice").style.visibility = "visible"
-            }
-
-            function switchHTTPS() {
-                window.location.assign("https://" + domainURL + "/login.html")
-            }
+            var loading = true
+            var loadingStatus = 0
 
             try {
                 const resp = fetch(protocol + "//" + domainURL + "/api/wsports", {
@@ -254,6 +331,7 @@
             const textEncode = (text) => new TextEncoder().encode(text);
             const textDecode = (text) => new TextDecoder().decode(text);
             var keyPair = null
+            var ws = null
 
             async function generatePubKey() {
                 keyPair = await crypto.subtle.generateKey(
@@ -319,17 +397,75 @@
                 return textDecode(decryptedBuffer);
             }
 
+            async function fetchSelfData() {
+                ws.send(JSON.stringify({"type": "reqUser"}))
+            }
+
+            async function fetchChatData(CID) {
+                ws.send(JSON.stringify({"type": "reqChat", "CID": CID}))
+            }
+
+            async function waitUntilLoadingDone() {
+                if (!loading) {
+                    return
+                }
+
+                return new Promise((resolve) => {
+                    const checkLoad = () => {
+                        if (loadingStatus >= 2) {
+                            resolve()
+                        } else {
+                            setTimeout(checkLoad, 100)
+                        }
+                    };
+                    checkLoad();
+                })
+            }
+
+            async function waitUntilPageReady() {
+                return new Promise((resolve) => {
+                    const checkReady = () => {
+                        if (document.readyState == "complete") {
+                            resolve()
+                        } else {
+                            setTimeout(checkReady, 100)
+                        }
+                    };
+                    checkReady();
+                })
+            }
+
+            async function load() {
+                loadingText.textContent = "Fetching user data..."
+                await fetchSelfData()
+                loadingText.textContent = "Fetching chat data..."
+                await fetchChatData(0)
+
+                await waitUntilLoadingDone()
+
+                loadingText.textContent = "Waiting for page..."
+
+                await waitUntilPageReady()
+
+                loadingText.textContent = ""
+                document.getElementById("loadingOverlay").style.opacity = 0
+                setTimeout(() => {
+                    document.getElementById("loadingOverlay").remove()
+                }, 500)
+            }
+
             generatePubKey().then((pubBytes) => {
                 try {
-                    const ws = new WebSocket(WsProtocol + "//" + window.location.hostname + ":" + wsPort + "/");
+                    ws = new WebSocket(WsProtocol + "//" + window.location.hostname + ":" + wsPort + "/");
 
                     ws.onopen = (ev) => {
                         console.log("Websocket Connected!")
                         ws.send(JSON.stringify({"type":"encrypt-key-xch", "publicKey": bytesToHex(pubBytes)}))
+                        loadingText.textContent = "Encrypting..."
                     }
 
                     ws.onmessage = (event) => {
-                        console.log('Message from server:', event);
+                        console.log("Message from server:" + event);
                         const resp = JSON.parse(event.data)
 
                         if (resp["type"] == "encrypt-key-xch") {
@@ -343,9 +479,10 @@
                                     })
                                 }
                                 console.log("Encrypted with AES!")
+
+                                load()
                             })
                         }
-
 
                         if (resp["encryption"] == "AES") {
                             if (encrypted) {
@@ -353,6 +490,35 @@
                                     respBody = JSON.parse(data)
 
                                     console.log(respBody)
+                                    if (respBody["type"] == "auth_expired") {
+                                        window.location.assign(protocol + "//" + domainURL + "/login.html?errT=Login%20Expired&errC=Your%20session%20has%20expired.%20Please%20try%20logging%20in%20again.")
+                                    }
+
+                                    if (respBody["type"] == "reqUserSuccess") {
+                                        if (loading) {
+                                            loadingStatus += 1
+                                        }
+                                    }
+
+                                    if (respBody["type"] == "reqChatSuccess") {
+                                        if (loading) {
+                                            loadingStatus += 1
+                                        }
+                                    }
+
+                                    if (respBody["type"] == "reqUserFailed") {
+                                        if (loading) {
+                                            fetchSelfData()
+                                        } else {
+
+                                        }
+                                    }
+
+                                    if (resp["type"] == "reqChatFailed") {
+                                        if (loading) {
+                                            fetchChatData(0)
+                                        }
+                                    }
                                 })
                             } else {
                                 console.log("Recieved encrypted message, but we are not ready!")
@@ -361,14 +527,16 @@
                     };
 
                     ws.onerror = (error) => {
-                        console.error('WebSocket Error:', error);
+                        console.error("WebSocket Error: " + error);
                         
                     };
 
                     ws.onclose = (event) => {
                         console.log('Connection closed:', event.reason);
+
                         console.log("Attempting reconnect...")
-                        window.location.reload()
+                        loadingText.textContent = "Connection lost"
+                        setTimeout(() => window.location.reload(), 5000)
                     };
                 } catch {
                     console.log("Websocket Connection Failed!")
