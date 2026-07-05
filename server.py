@@ -4,7 +4,7 @@ print("""
 #     Open-LAN     #
 #                  #
 ####################
-by Gigapixel Entertainment LLC
+by GigaPixel Entertainment LLC
 """)
 
 print("""
