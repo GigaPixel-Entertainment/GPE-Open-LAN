@@ -9,16 +9,17 @@
     --placeholder: #BBBBBB;
     --button: #a1c3c8;
     --button-press: #90b2b7;
+    --highlight: #6ea6db;
 }
 
 html, body {
     height: 100vh;
+    overflow: hidden;
 }
 
 body {
     padding: 0;
     margin: 0;
-    overflow: hidden;
     background: linear-gradient(105deg, var(--bg) 65%, var(--acc) 65.1%, var(--acc) 68%, var(--acc2) 68.1%, var(--acc2) 71%, var(--acc3) 71.1%, var(--acc3) 74%, var(--bg) 74.1%);
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -31,6 +32,7 @@ footer {
     color: white;
     font-family: "Fire Code", monospace;
     font-size: small;
+    z-index: 99;
 }
 
 footer > a {
@@ -178,6 +180,7 @@ input[type="submit"]:hover {
     border-radius: 1em;
     padding: .5em;
     margin: .5em;
+    margin-bottom: 2em;
     left: 0;
     bottom: 0;
     visibility: hidden;
