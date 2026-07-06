@@ -24,6 +24,8 @@
                 --button: #a1c3c8;
                 --button-press: #90b2b7;
                 --highlight: #6ea6db;
+                --sendButtonGreen: #92c37c;
+                --rose: #e99898;
             }
 
             html, body {
@@ -63,6 +65,7 @@
                 left: 5%;
                 width: 95%;
                 background-color: var(--acc4);
+                display: flex;
             }
 
             #msgBoxHeader > p {
@@ -72,6 +75,16 @@
                 margin-left: 1em;
                 margin-top: 1em;
                 margin-bottom: 1em;
+                width: 85%;
+            }
+
+            #msgBoxHeader > button {
+                width: 15%;
+                border: none;
+                border-radius: 0;
+                background-color: var(--acc3);
+                cursor: pointer;
+                font-size: 1.25em;
             }
 
             #msgBox {
@@ -81,6 +94,7 @@
                 bottom: 0;
                 left: 5%;
                 background-color: var(--bg);
+                overflow-x: hidden;
             }
 
             #friendsHeader {
@@ -134,7 +148,7 @@
             }
 
             #textEntry {
-                width: calc(100% - 1em);
+                width: calc(92.5% - 1em);
                 font-size: 1.5em;
                 margin: .25em;
                 margin-bottom: 0;
@@ -148,6 +162,34 @@
                 resize: none;
             }
 
+            #sendMsg {
+                position: absolute;
+                width: 7%;
+                font-size: 1.5em;
+                margin: .25em auto;
+                height: calc(100% - .5em);
+                border: none;
+                border-radius: 0;
+                background-color: var(--acc5);
+                color: var(--sendButtonGreen);
+                font-weight: bolder;
+                cursor: pointer;
+            }
+
+            #sendMsg:hover {
+                background-color: var(--bg);
+            }
+
+            .smallTime {
+                position: absolute;
+                width: 100%;
+                margin: 0;
+                margin-top: .8em;
+                font-size: .65em;
+                color: darkgray;
+                visibility: hidden;
+            }
+
             #textEntry::placeholder {
                 color: var(--acc4);
                 font-style: italic;
@@ -157,10 +199,10 @@
                 position: absolute;
                 top: 0;
                 right: 0;
-                width: 20%;
+                width: 25%;
                 height: 100%;
                 box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
-                transform: translateX(100%);
+                transform: translateX(calc(100% + 8px));
                 transition: transform 500ms ease-in-out;
             }
 
@@ -177,6 +219,116 @@
                 font-weight: 700;
                 text-align: center;
                 cursor: pointer;
+            }
+
+            #myProfileScreen {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: 3;
+                background-color: var(--bg);
+                box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
+                transform: translateY(calc(-100% - 8px));
+
+                transition: transform 0.5s ease-in-out;
+            }
+
+            #myProfileHeader {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                background-color: var(--acc4);
+                display: flex;
+            }
+
+            #myProfileHeader > p {
+                font-style: italic;
+                font-size: 1.25em;
+                font-weight: 100;
+                margin-left: 1em;
+                margin-top: 1em;
+                margin-bottom: 1em;
+                width: 85%;
+            }
+
+            #myProfileHeader > button {
+                width: 15%;
+                border: none;
+                border-radius: 0;
+                background-color: var(--acc3);
+                cursor: pointer;
+                font-size: 1.25em;
+            }
+
+            #myProfileLeft {
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 40%;
+                height: 90%;
+            }
+
+            #myProfileRight {
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                width: 60%;
+                height: 90%;
+            }
+
+            #myProfileEditingList {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #myProfileEditingList > div {
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+                align-items: center;
+                justify-content: end;
+            }
+
+            #myProfileEditingList > div > p {
+                font-size: 2em;
+                font-weight: 500;
+                width: 10em;
+                text-align: right;
+            }
+
+            #myProfileEditingList > div > input {
+                font-size: 2em;
+                height: 1em;
+                margin-left: .5em;
+                margin-right: .5em;
+                width: 15em;
+                border: none;
+                border-radius: 0;
+                background-color: var(--acc5);
+                padding: .25em;
+            }
+
+            .editBtn {
+                font-size: 2em;
+                width: 4em;
+                background-color: var(--rose);
+                border: none;
+                border-radius: 0;
+                cursor: pointer;
+                margin-right: .5em;
+            }
+
+            .saveBtn {
+                font-size: 2em;
+                width: 4em;
+                background-color: var(--sendButtonGreen);
+                border: none;
+                border-radius: 0;
+                cursor: pointer;
+                margin-right: .5em;
             }
 
             #loadingOverlay {
@@ -225,6 +377,23 @@
                 overflow-y: scroll;
             }
 
+            .messageDiv {
+                width: 100%;
+                background-color: var(--bg);
+                display: flex;
+                justify-content: space-between;
+                padding: 1em;
+                padding-bottom: 0;
+            }
+
+            .messageDiv:hover {
+                background-color: var(--acc);
+            }
+
+            .invis { 
+                opacity: 0;
+            }
+
             ::-webkit-scrollbar {
                 width: 5px;
             }
@@ -239,20 +408,22 @@
             }
             
             ::-webkit-scrollbar-thumb:hover {
-                background: #111; 
+                background: #111;
             }
         </style>
     </head>
     <body>
         <div id="serverList"></div>
         <div id="msgBoxHeader">
-            <p class="font white">You are chatting with: The Void</p>
+            <p class="font white" id="ChatName">You are chatting with: The Void</p>
+            <button class="font white" onclick="showMyProfileScreen()">my profile ↓</button>
         </div>
         <div id="msgBox" class="scroll">
 
         </div>
         <div id="textEntryWrapper">
             <textarea placeholder="type a message..." id="textEntry" class="font"></textarea>
+            <button id="sendMsg" class="font">-></button>
         </div>
 
         <div id="friendsListWrapper">
@@ -263,6 +434,42 @@
             </div>
             <div id="friendsList" class="scroll">
                 <p class="font white">active messages</p>
+            </div>
+        </div>
+
+        <div id="myProfileScreen">
+            <div id="myProfileHeader">
+                <p class="font white" id="ChatName">my profile settings</p>
+                <button class="font white" onclick="showMyProfileScreen()">go back ↑</button>
+            </div>
+
+            <div id="myProfileLeft">
+
+            </div>
+            
+            <div id="myProfileRight">
+                <div id="myProfileEditingList">
+                    <div>
+                        <p class="font white">username</p>
+                        <input type="text" disabled class="font" id="currUsername">
+                        <button class="font black editBtn invis" style="cursor: auto;">edit</button>
+                    </div>
+                    <div>
+                        <p class="font white">displayname</p>
+                        <input type="text" disabled class="font" id="currDisplayname">
+                        <button class="font black editBtn" id="editDisplayname">edit</button>
+                    </div>
+                    <div>
+                        <p class="font white">birthday</p>
+                        <input type="date" disabled class="font" id="currBirthday">
+                        <button class="font black editBtn" id="editBirthday">edit</button>
+                    </div>
+                    <div>
+                        <p class="font white">pronouns</p>
+                        <input type="text" disabled class="font" id="currPronouns">
+                        <button class="font black editBtn" id="editPronouns">edit</button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -279,11 +486,17 @@
         // Misc UI
         const friendsListWrapper = document.getElementById("friendsListWrapper")
         const toggleFriendsList = document.getElementById("toggleFriendsList")
+        const myProfileScreen = document.getElementById("myProfileScreen")
+        const chatName = document.getElementById("ChatName")
+
+        const chatDiv = document.getElementById("msgBox")
+
+        var currChat = 0
 
         var friendsListShown = false
         function hideFriendsList() {
             if (friendsListShown) {
-                friendsListWrapper.style.transform = "translateX(100%)"
+                friendsListWrapper.style.transform = "translateX(calc(100% + 8px))"
                 toggleFriendsList.textContent = "<"
             } else {
                 friendsListWrapper.style.transform = "translateX(0%)"
@@ -292,39 +505,338 @@
 
             friendsListShown = !friendsListShown
         }
+
+        var myProfileScreenShown = false
+        function showMyProfileScreen() {
+            if (myProfileScreenShown) {
+                myProfileScreen.style.transform = "translateY(calc(-100% - 8px))"
+            } else {
+                myProfileScreen.style.transform = "translateY(0%)"
+            }
+
+            myProfileScreenShown = !myProfileScreenShown
+        }
+
+        const currUsernameI = document.getElementById("currUsername")
+        const currDisplaynameI = document.getElementById("currDisplayname")
+        const editCurrDisplayname = document.getElementById("editDisplayname")
+        const currBirthdayI = document.getElementById("currBirthday")
+        const editCurrBirthday = document.getElementById("editBirthday")
+        const currPronounsI = document.getElementById("currPronouns")
+        const editCurrPronouns = document.getElementById("editPronouns")
+
+        function popUserInfo(resp) {
+            currUsernameI.value = resp["username"]
+            currDisplaynameI.value = resp["displayname"]
+
+            if (resp["birthday"] && type(resp["birthday"]) == "Number") {
+                currBirthdayI.value = resp["birthday"]
+            }
+
+            currPronounsI.value = resp["pronouns"]
+        }
+
+        var editingDisplayname = false
+        editCurrDisplayname.onclick = () => {
+            if (editingDisplayname) {
+                editCurrDisplayname.classList = "font black editBtn"
+                editCurrDisplayname.textContent = "edit"
+                currDisplaynameI.classList.remove("white")
+                currDisplaynameI.disabled = true
+            } else {
+                editCurrDisplayname.classList = "font black saveBtn"
+                editCurrDisplayname.textContent = "save"
+                currDisplaynameI.classList.add("white")
+                currDisplaynameI.disabled = false
+            }
+            editingDisplayname = !editingDisplayname
+        }
+
+        function getUserInfoFromUID(userInfoList, UID) {
+            for (let index = 0; index < userInfoList.length; index++) {
+                const element = userInfoList[index];
+                if (element["UID"] == UID) {
+                    return element
+                }
+            }
+
+            return {"UID": UID, "displayname":"[missing user]", "pfp":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAYAAAB/HSuDAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAAZHUlEQVR4Xu3YMQEAIAzAsIF/z/AjgSZnJXTNzBkAAADga/sNAAAAwH8MAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDgAr4+CP9pcPk3AAAAAElFTkSuQmCC","username":"[missing user]"}
+        }
+
+        function genMsg(message) {
+            const lines = message["content"].split("\n")
+            const msgP = document.createElement("p")
+            msgP.classList = "font white"
+            msgP.style.margin = ".1em"
+
+            for (let line = 0; line < lines.length; line++) {
+                const lineContent = lines[line];
+                const words = lineContent.split(" ")
+
+                for (let index = 0; index < words.length; index++) {
+                    const word = words[index];
+
+                    var wordE = null
+                    if (word.startsWith("http://") || word.startsWith("https://")) {
+                        wordE = document.createElement("a")
+                        wordE.href = word
+                        wordE.target = "_blank"
+                        wordE.style.color = "var(--highlight)"
+                    } else {
+                        wordE = document.createElement("p")
+                    }
+                    wordE.textContent = word + (index + 1 < words.length ? " " : "")
+                    wordE.style.display = "inline-block"
+                    wordE.style.width = "max-content"
+                    wordE.style.wordWrap = "normal"
+                    wordE.style.margin = "0"
+                    wordE.style.whiteSpace = "pre-wrap"
+                    msgP.appendChild(wordE)
+                }
+
+                if (line + 1 < lines.length) {
+                    var br = document.createElement("br")
+                    msgP.appendChild(br)
+                }
+            }
+            
+
+            return msgP
+        }
+
+        function genFullMsg(userInfoList, message) {
+            var messageDate = null
+
+            if (message["time"]) {
+                messageDate = new Date(message["time"] * 1000)
+            }
+
+            const messageDiv = document.createElement("div")
+            messageDiv.classList = "messageDiv"
+
+            const imgArea = document.createElement("div")
+            imgArea.style.width = "2.5%"
+
+            const pfpImg = document.createElement("img")
+            pfpImg.style.width = "100%"
+            pfpImg.style.aspectRatio = "1"
+            pfpImg.style.border = "3px solid var(--acc4)"
+            pfpImg.style.borderRadius = "9999999px"
+            pfpImg.style.backgroundColor = "rgba(0, 0, 0, 0)"
+            pfpImg.src = getUserInfoFromUID(userInfoList, message["UID"])["pfp"]
+
+            const textarea = document.createElement("div")
+            textarea.style.width = "96%"
+            textarea.style.background = "none"
+
+            const username = document.createElement("h2")
+            username.style.margin = "0"
+            username.classList = "font white"
+            username.style.display = "flex"
+            username.textContent = getUserInfoFromUID(userInfoList, message["UID"])["displayname"]
+
+            if (messageDate) {
+                const timeDisplay = document.createElement("p")
+                timeDisplay.classList = "font gray"
+                timeDisplay.style.width = "fit-content"
+                timeDisplay.style.margin = "0"
+                timeDisplay.style.color = "gray"
+                timeDisplay.style.fontWeight = "500"
+                timeDisplay.style.marginLeft = "1em"
+                timeDisplay.textContent = messageDate.toLocaleTimeString()
+
+                username.append(timeDisplay)
+            }
+
+            const msgP = genMsg(message)
+
+            imgArea.append(pfpImg)
+            textarea.appendChild(username)
+            textarea.append(msgP)
+            messageDiv.append(imgArea)
+            messageDiv.append(textarea)
+
+            return messageDiv
+        }
+
+        function genSmallMsg(userInfoList, message) {
+            var messageDate = null
+
+            if (message["time"]) {
+                messageDate = new Date(message["time"] * 1000)
+            }
+
+            const messageDiv = document.createElement("div")
+            messageDiv.classList = "messageDiv"
+            messageDiv.style.paddingTop = "0"
+
+            const padArea = document.createElement("div")
+            padArea.style.width = "3%"
+
+            
+            if (messageDate) {
+                const timeDisplay = document.createElement("p")
+                timeDisplay.textContent = "(" + messageDate.toLocaleTimeString("en-US", {"hour":"2-digit","minute":"2-digit"}) + ")"
+                timeDisplay.classList = "font smallTime"
+
+                messageDiv.addEventListener("mouseenter", (e) => {
+                    timeDisplay.style.visibility = "visible"
+                })
+
+                messageDiv.addEventListener("mouseleave", (e) => {
+                    timeDisplay.style.visibility = "hidden"
+                })
+
+                padArea.append(timeDisplay)
+            }
+
+            const textarea = document.createElement("div")
+            textarea.style.width = "96%"
+            textarea.style.background = "none"
+
+            const msgP = genMsg(message)
+
+            textarea.append(msgP)
+            messageDiv.append(padArea)
+            messageDiv.append(textarea)
+
+            return messageDiv
+        }
+
+        const userInfoCache = []
+        async function setChat(chat) {
+            if (chat["CID"] != currChat) {
+                return
+            }
+
+            const currScroll = chatDiv.scrollTop
+            const atBottom = currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8
+
+            const currChatName = chat["Name"]
+            const currChatType = chat["Type"]
+
+            if (currChatType == "server" || currChatType == "forced-server") {
+                chatName.textContent = "You are chatting on: " + currChatName
+            } else if (currChatType == "dm") {
+                chatName.textContent = "You are chatting with: " + currChatName
+            }
+
+            if (chat["messages"].length == 0) {
+                chatDiv.replaceChildren()
+                return
+            }
+
+            chat["messages"].sort((a, b) => a["time"] - b["time"]);
+
+            requiredUIDs = []
+            chat["messages"].forEach(message => {
+                if (!requiredUIDs.includes(message["UID"])) {
+                    cached = false
+                    for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
+                        const cache = userInfoCache[cacheIndex];
+                        
+                        if (cache["UID"] == message["UID"]) {
+                            cached = true
+                            break
+                        }
+                    }
+
+                    if (!cached) {
+                        requiredUIDs.push(message["UID"])
+                    }
+                }
+            });
+
+            if (requiredUIDs.length > 0) {
+                userInfoList = await request(JSON.stringify({"type":"reqUsersList","users":requiredUIDs}))
+
+                userInfoList["users"].forEach((info) => {
+                    userInfoCache.push(info)
+                })
+            }
+
+            if (loading) {
+                loadingStatus += 1
+            }
+
+            chatDiv.replaceChildren()
+
+            lastMsg = null
+
+            for (let index = 0; index < chat["messages"].length; index++) {
+                const message = chat["messages"][index];
+                var messageDiv = null
+
+                if (lastMsg) {
+                    if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60) {
+                        messageDiv = genSmallMsg(userInfoCache, message)
+
+                    } else {
+                        messageDiv = genFullMsg(userInfoCache, message)
+                    }
+                } else {
+                    messageDiv = genFullMsg(userInfoCache, message)
+                }
+
+                chatDiv.appendChild(messageDiv)
+                lastMsg = message
+            }
+
+            const padding = document.createElement("div")
+            padding.style.width = "100%"
+            padding.style.height = "5em"
+            chatDiv.appendChild(padding)
+
+            if (atBottom) {
+                chatDiv.scrollTop = chatDiv.scrollHeight
+            } else {
+                chatDiv.scrollTop = currScroll
+            }
+
+            if (currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) {
+                chatDiv.scrollTop = chatDiv.scrollHeight
+            }
+        }
     </script>
 
     <script>
-            // Login
+            // Network
             const loadingText = document.getElementById("loadingText")
 
             const protocol = window.location.protocol
             const domainURL = window.location.host
             const WsProtocol = protocol == "http:" ? "ws:" : "wss:"
 
-            var wsPort = WsProtocol == "ws:" ? 33334 : 33335
+            const trackerIds = []
+            const trackerIdToFunc = []
+
+            var wsURL = WsProtocol + "//" + window.location.hostname + ":" + (WsProtocol == "ws:" ? 33334 : 33335)
+            var wsUrlReady = new Promise((res) => {
+                try {
+                    const resp = fetch(protocol + "//" + domainURL + "/api/" + WsProtocol.split(":")[0] + "url", {
+                            method: "GET",
+                            cache: 'no-store',
+                            headers: {
+                                "Content-Type": "text/plain",
+                                "Domain-Url": window.location.hostname
+                            }
+                        }).then((r) => {
+                            wsURL = r.headers.get("Url")
+                            res(wsURL)
+                        }).catch((r) => {
+                            console.log("Failed to fetch websocket port! Using default")
+                            res(wsURL)
+                        })
+                } catch {
+                    console.log("Failed to fetch websocket port! Using default")
+                    res(wsURL)
+                }
+            })
+
             var sharedSecretBytes = null
             var encrypted = false
             var loading = true
             var loadingStatus = 0
-
-            try {
-                const resp = fetch(protocol + "//" + domainURL + "/api/wsports", {
-                        method: "GET",
-                        cache: 'no-store',
-                        headers: {
-                            "Content-Type": "text/plain"
-                        }
-                    }).then((res) => {
-                        wsPort = WsProtocol == "ws:" ? res.headers.get("Ws-Port") : res.headers.get("Wss-Port")
-                    }).catch((r) => {
-                        console.log("Failed to fetch websocket port! Using default")
-                    })
-            } catch {
-                console.log("Failed to fetch websocket port! Using default")
-            }
-
-            console.log("Connecting to websocket via " + WsProtocol + "//")
 
             const hexToBytes = hex => Uint8Array.from(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
             const bytesToHex = bytes => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -412,7 +924,7 @@
 
                 return new Promise((resolve) => {
                     const checkLoad = () => {
-                        if (loadingStatus >= 2) {
+                        if (loadingStatus >= 3) {
                             resolve()
                         } else {
                             setTimeout(checkLoad, 100)
@@ -447,6 +959,7 @@
 
                 await waitUntilPageReady()
 
+                loading = false
                 loadingText.textContent = ""
                 document.getElementById("loadingOverlay").style.opacity = 0
                 setTimeout(() => {
@@ -454,95 +967,185 @@
                 }, 500)
             }
 
-            generatePubKey().then((pubBytes) => {
-                try {
-                    ws = new WebSocket(WsProtocol + "//" + window.location.hostname + ":" + wsPort + "/");
+            function genTrackerId() {
+                const trackerId = Math.round(Math.random() * 10000000000)
 
-                    ws.onopen = (ev) => {
-                        console.log("Websocket Connected!")
-                        ws.send(JSON.stringify({"type":"encrypt-key-xch", "publicKey": bytesToHex(pubBytes)}))
-                        loadingText.textContent = "Encrypting..."
-                    }
-
-                    ws.onmessage = (event) => {
-                        console.log("Message from server:" + event);
-                        const resp = JSON.parse(event.data)
-
-                        if (resp["type"] == "encrypt-key-xch") {
-                            serverKeyRecieved(resp["publicKey"]).then(() => {
-                                encrypted = true
-
-                                const origSend = ws.send
-                                ws.send = function(data) {
-                                    encryptAES(data, sharedSecretBytes).then((encryptionResults) => {
-                                        origSend.call(ws, JSON.stringify({"encryption": "AES", "iv": encryptionResults["iv"],"body":encryptionResults["ciphertext"]}))
-                                    })
-                                }
-                                console.log("Encrypted with AES!")
-
-                                load()
-                            })
-                        }
-
-                        if (resp["encryption"] == "AES") {
-                            if (encrypted) {
-                                decryptAES(resp["iv"], resp["body"], sharedSecretBytes).then((data) => {
-                                    respBody = JSON.parse(data)
-
-                                    console.log(respBody)
-                                    if (respBody["type"] == "auth_expired") {
-                                        window.location.assign(protocol + "//" + domainURL + "/login.html?errT=Login%20Expired&errC=Your%20session%20has%20expired.%20Please%20try%20logging%20in%20again.")
-                                    }
-
-                                    if (respBody["type"] == "reqUserSuccess") {
-                                        if (loading) {
-                                            loadingStatus += 1
-                                        }
-                                    }
-
-                                    if (respBody["type"] == "reqChatSuccess") {
-                                        if (loading) {
-                                            loadingStatus += 1
-                                        }
-                                    }
-
-                                    if (respBody["type"] == "reqUserFailed") {
-                                        if (loading) {
-                                            fetchSelfData()
-                                        } else {
-
-                                        }
-                                    }
-
-                                    if (resp["type"] == "reqChatFailed") {
-                                        if (loading) {
-                                            fetchChatData(0)
-                                        }
-                                    }
-                                })
-                            } else {
-                                console.log("Recieved encrypted message, but we are not ready!")
-                            }
-                        }
-                    };
-
-                    ws.onerror = (error) => {
-                        console.error("WebSocket Error: " + error);
-                        
-                    };
-
-                    ws.onclose = (event) => {
-                        console.log('Connection closed:', event.reason);
-
-                        console.log("Attempting reconnect...")
-                        loadingText.textContent = "Connection lost"
-                        setTimeout(() => window.location.reload(), 5000)
-                    };
-                } catch {
-                    console.log("Websocket Connection Failed!")
-                    console.log("Attempting reconnect...")
-                    window.location.reload()
+                if (trackerIds.includes(trackerId)) {
+                    return genTrackerId()
                 }
+
+                return trackerId
+            }
+
+            async function request(data) {
+                return new Promise((resolve) => {
+                    const trackerId = genTrackerId()
+                    trackerIds.push(trackerId)
+                    trackerIdToFunc.push([trackerId, resolve])
+                    const dataParsed = JSON.parse(data)
+                    dataParsed["trackerID"] = trackerId
+                    ws.send(JSON.stringify(dataParsed))
+                })
+            }
+
+            async function trackerHit(trackerId, resp) {
+                trackerIds.splice(trackerIds.indexOf(trackerId), 1)
+                trackerIdToFunc.forEach(element => {
+                    if (element[0] == trackerId) {
+                        trackerIdToFunc.splice(trackerIdToFunc.indexOf(element), 1)
+                        element[1](resp)
+                    }
+                });
+            }
+
+            wsUrlReady.then((wsURL) => {
+                console.log("Connecting to websocket via " + WsProtocol + "//")
+
+                generatePubKey().then((pubBytes) => {
+                    try {
+                        ws = new WebSocket(wsURL);
+
+                        ws.onopen = (ev) => {
+                            console.log("Websocket Connected!")
+                            ws.send(JSON.stringify({"type":"encrypt-key-xch", "publicKey": bytesToHex(pubBytes)}))
+                            loadingText.textContent = "Encrypting..."
+                        }
+
+                        ws.onmessage = (event) => {
+                            const resp = JSON.parse(event.data)
+
+                            if (resp["type"] == "encrypt-key-xch") {
+                                serverKeyRecieved(resp["publicKey"]).then(() => {
+                                    encrypted = true
+
+                                    const origSend = ws.send
+                                    ws.send = function(data) {
+                                        encryptAES(data, sharedSecretBytes).then((encryptionResults) => {
+                                            origSend.call(ws, JSON.stringify({"encryption": "AES", "iv": encryptionResults["iv"],"body":encryptionResults["ciphertext"]}))
+                                        })
+                                    }
+                                    console.log("Encrypted with AES!")
+
+                                    load()
+                                })
+                            }
+
+                            if (resp["encryption"] == "AES") {
+                                if (encrypted) {
+                                    decryptAES(resp["iv"], resp["body"], sharedSecretBytes).then((data) => {
+                                        respBody = JSON.parse(data)
+                                        trackerId = respBody["trackerID"]
+
+                                        console.log(respBody)
+                                        if (respBody["type"] == "auth_expired") {
+                                            window.location.assign(protocol + "//" + domainURL + "/login.html?errT=Login%20Expired&errC=Your%20session%20has%20expired.%20Please%20try%20logging%20in%20again.")
+                                        }
+
+                                        if (respBody["type"] == "reqUserSuccess") {
+                                            if (loading) {
+                                                loadingStatus += 1
+                                            }
+
+                                            popUserInfo(respBody)
+                                            if (trackerId && trackerIds.includes(trackerId)) {
+                                                trackerHit(trackerId, respBody)
+                                            }
+                                        }
+
+                                        if (respBody["type"] == "reqChatSuccess") {
+                                            if (loading) {
+                                                loadingStatus += 1
+                                            }
+
+                                            
+                                            setChat(respBody["chat"])
+                                        }
+
+                                        if (respBody["type"] == "reqUsersListSuccess") {
+                                            if (trackerId && trackerIds.includes(trackerId)) {
+                                                trackerHit(trackerId, respBody)
+                                            }
+                                        }
+
+                                        if (respBody["type"] == "chatUpdate") {
+                                            setChat(respBody["chat"])
+                                        }
+
+                                        if (respBody["type"] == "reqUserFailed") {
+                                            if (loading) {
+                                                fetchSelfData()
+                                            } else {
+
+                                            }
+                                        }
+
+                                        if (resp["type"] == "reqChatFailed") {
+                                            if (loading) {
+                                                fetchChatData(0)
+                                            }
+                                        }
+                                    })
+                                } else {
+                                    console.log("Recieved encrypted message, but we are not ready!")
+                                }
+                            }
+                        };
+
+                        ws.onerror = (error) => {
+                            console.error("WebSocket Error: " + error);
+                            
+                        };
+
+                        ws.onclose = (event) => {
+                            console.log('Connection closed:', event.reason);
+
+                            console.log("Attempting reconnect...")
+                            loadingText.textContent = "Connection lost"
+                            setTimeout(() => window.location.reload, 5000)
+                        };
+                    } catch {
+                        console.log("Websocket Connection Failed!")
+                        console.log("Attempting reconnect...")
+                        window.location.reload()
+                    }
+                })
             })
+
+            
+    </script>
+    <script>
+        // Send msg
+        const textEntry = document.getElementById("textEntry")
+        const sendMsgBtn = document.getElementById("sendMsg")
+
+        async function sendMsg() {
+            message = textEntry.value.trim()
+            textEntry.value = ""
+
+            if (message == "") {
+                return
+            }
+
+            msgSendResults = await request(JSON.stringify({"type":"sendMsg","CID":currChat,"msg":message}))
+        }
+
+        sendMsgBtn.onclick = () => {
+            sendMsg()
+        }
+
+        textEntry.addEventListener("keydown", (event) => {
+            if (event.key == "Enter" && !event.shiftKey) {
+                event.preventDefault()
+                sendMsg()
+            }
+        })
+
+
+        document.addEventListener("keydown", (key) => {
+            if (key.key == "/" && textEntry != document.activeElement) {
+                key.preventDefault()
+                textEntry.focus()
+            }
+        })
     </script>
 </html>

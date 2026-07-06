@@ -4,7 +4,7 @@ print("""
 #     Open-LAN     #
 #                  #
 ####################
-by GigaPixel Entertainment LLC
+by Gigapixel Entertainment LLC
 """)
 
 print("""
@@ -33,7 +33,7 @@ os
 """)
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from websockets.asyncio.server import serve, broadcast, ServerConnection
+from websockets.asyncio.server import serve, ServerConnection
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from http.server import BaseHTTPRequestHandler
@@ -67,7 +67,7 @@ NUM_ENCRYPT_ROUNDS = 15
 CWD = pathlib.Path(__file__).resolve().parent
 CA_CERT_DIR = CWD / "CA_CERT"
 CHATS_DIR = CWD / "Chats/"
-CHATS_KEY = CHATS_DIR / "meta.key"
+SAVE_KEY = CWD / "meta.key"
 CSS_DIR = CWD / "CSS/"
 MEDIA_DIR = CWD / "Media/"
 USERS_DIR = CWD / "Users/"
@@ -99,7 +99,6 @@ print("Key generated successfully")
 users = []
 
 chats = []
-chatKey = None
 fernet = None
 
 class HTTPRequestParser(BaseHTTPRequestHandler):
@@ -114,46 +113,70 @@ class HTTPRequestParser(BaseHTTPRequestHandler):
         self.error_code = code
         self.error_message = message
 
-def genChatKey():
+def genSaveKey():
     key = Fernet.generate_key()
-    with open(CHATS_KEY, "wb") as f:
+    with open(SAVE_KEY, "wb") as f:
         f.write(key)
         f.close()
 
 def loadUsers():
+    global fernet
+
     print("Loading users")
 
     if not USERS_DIR.exists():
         USERS_DIR.mkdir()
     
+    if not SAVE_KEY.exists():
+        print("Generating new save key!")
+        genSaveKey()
+
+    print("Reading save key")
+    with open(SAVE_KEY, "rb") as f:
+        saveKey = f.read()
+        f.close()
+
+    fernet = Fernet(saveKey)
 
     for usr in USERS_DIR.iterdir():
         if usr.is_file():
             with open(usr, "rb") as f:
-                users.append(msgpack.unpackb(f.read()))
+                userData = msgpack.unpackb(fernet.decrypt(f.read()))
+
+                if not "PFP" in userData:
+                    userData["PFP"] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAYAAAB/HSuDAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAAZHUlEQVR4Xu3YMQEAIAzAsIF/z/AjgSZnJXTNzBkAAADga/sNAAAAwH8MAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDAAAAAAIAAAwAAAAACDAAAAAAIMAAAAAAgwAAAAACAAAMAAAAAAgwAAAAACDAAAAAAIMAAAAAAgAADAAAAAAIMAAAAAAgwAAAAACDgAr4+CP9pcPk3AAAAAElFTkSuQmCC"
+                    
+                if not "Displayname" in userData:
+                    userData["Displayname"] = userData["USRNAME"]
+
+                if not "Birthday" in userData:
+                    userData["Birthday"] = None
+                
+                if not "BirthdayV" in userData:
+                    userData["BirthdayV"] = "PRIVATE"
+                
+                if not "AccCreated" in userData:
+                    userData["AccCreated"] = time.time()
+                
+                if not "Pronouns" in userData:
+                    userData["Pronouns"] = ""
+
+                if not "Bio" in userData:
+                    userData["Bio"] = ""
+
+                users.append(userData)
                 f.close()
+    
     
     print("Users loaded")
 
 def loadChats():
-    global chatKey
     global fernet
 
     print("Loading chats")
 
     if not CHATS_DIR.exists():
         CHATS_DIR.mkdir()
-
-    if not CHATS_KEY.exists():
-        print("Generating new chat key!")
-        genChatKey()
-    
-    print("Reading chat key")
-    with open(CHATS_KEY, "rb") as f:
-        chatKey = f.read()
-        f.close()
-    
-    fernet = Fernet(chatKey)
     
     for chat in CHATS_DIR.iterdir():
         if chat.is_file() and chat.suffix == ".enc":
@@ -161,18 +184,32 @@ def loadChats():
                 with open(chat, "rb") as f:
                     fileContents = msgpack.unpackb(f.read())
                     metadata = fileContents["meta"]
+                    name = fileContents["Name"]
                     messages = fileContents["messages"]
 
                     for msg in messages:
                         msg["content"] = fernet.decrypt(msg["content"]).decode("utf-16")
 
-                    chats.append({"CID": metadata["CID"], "messages": messages})
+                    chats.append({"CID": metadata["CID"], "Type": metadata["Type"], "Name": name, "messages": messages})
                     f.close()
             except Exception:
                 traceback.print_exc()
                 print(f"Failed to load chat! {chat.name}")
     
     print("Chats loaded")
+
+def saveUsers():
+    print("Saving users")
+
+    for usr in users:
+        try:
+            with open(USERS_DIR / f"{usr["USRNAME"]}.usr", "wb") as f:
+                f.write(fernet.encrypt(msgpack.packb(usr)))
+                f.close()
+        except:
+            traceback.print_exc()
+            print(f"Failed to save user {usr["USRNAME"]}!")
+    print("Users saved")
 
 def saveChats():
     print("Saving chats")
@@ -181,13 +218,13 @@ def saveChats():
         try:
             chatID = chat["CID"]
             with open(CHATS_DIR / f"{chatID}.enc", "wb") as f:
-                metadata = {"CID": chatID}
+                metadata = {"CID": chatID, "Type": chat["Type"]}
                 messages = []
 
                 for msg in chat["messages"]:
-                    messages.append({"time":msg["time"], "content":fernet.encrypt(msg["content"].encode("utf-16")), "user":msg["user"]})
+                    messages.append({"time":msg["time"], "content":fernet.encrypt(msg["content"].encode("utf-16")), "UID":msg["UID"]})
 
-                f.write(msgpack.packb({"meta":metadata,"messages":messages}))
+                f.write(msgpack.packb({"meta":metadata,"Name":chat["Name"],"messages":messages}))
                 f.close()
         except Exception:
             traceback.print_exc()
@@ -202,11 +239,25 @@ def getUsernameFromAuthToken(token):
     
     return None
 
+def getUserIdFromAuthToken(token):
+    userInfo = getUserInfoFromToken(token)
+
+    if userInfo == None:
+        return None
+    
+    return userInfo["UID"]
+
 def getUserInfoFromUsername(username):
     for user in users:
         if user["USRNAME"] == username:
             return user
         
+    return None
+
+def getUserInfoFromUserId(UID):
+    for user in users:
+        if user["UID"] == UID:
+            return user
     return None
 
 def getUserInfoFromToken(token):
@@ -273,7 +324,7 @@ def formatHttpResponse(filePath: pathlib.Path):
         "\r\n"
     ).encode("utf-8") + fileContents
 
-def formatLoginResponse(username):
+def formatLoginResponse(username, cloudflare):
     if not username:
         return formatErrorResponse(500)
 
@@ -281,7 +332,7 @@ def formatLoginResponse(username):
     VALID_TOKENS[username] = {"TOKEN": token, "EXPIRES": time.time() + (1*24*60*60)} # Expires in 1 day
     return (
         "HTTP/1.1 308 Permanent Redirect\r\n"
-        f"Set-Cookie: authToken={token}; Secure; HttpOnly; SameSite=Strict; Path=/\r\n"
+        f"Set-Cookie: authToken={token}; HttpOnly; SameSite=Strict; {"Domain=gigapixel.cc;" if cloudflare else ""} Path=/\r\n"
         f"Location: /app.html\r\n"
         "Connection: close\r\n"
         "\r\n"
@@ -342,14 +393,29 @@ def handleRequest(sk: socket.socket):
         
         pagePath = CWD / page.removeprefix("/")
 
-        if page == "/api/wsports":
-            sk.sendall(f"HTTP/1.1 200 OK\r\nWs-Port: {WS_PORT}\r\nWss-Port: {WSS_PORT}\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
+        if page == "/api/wsurl":
+            currUrl = parsed.headers.get("Domain-Url")
+            print(currUrl)
+
+            if "openlan.gigapixel.cc" in currUrl:
+                # POV: Cloudflare
+                sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: ws://openlanws.gigapixel.cc\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
+            else:
+                sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: ws://{currUrl}:{WS_PORT}\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
+        elif page == "/api/wssurl":
+            currUrl = parsed.headers.get("Domain-Url")
+
+            if "openlan.gigapixel.cc" in currUrl:
+                # POV: Cloudflare
+                sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: wss://openlanwss.gigapixel.cc\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
+            else:
+                sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: wss://{currUrl}:{WSS_PORT}\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
         elif page == "/api/login":
-            if "TK" in uri:
+            if "TK" in uri and "hostname" in uri:
                 username = isValidRedirectToken(uri["TK"])
 
                 if username != None:
-                    sk.sendall(formatLoginResponse(username))
+                    sk.sendall(formatLoginResponse(username, "gigapixel.cc" in uri["hostname"]))
         elif isSafePath(pagePath):
             sk.sendall(formatHttpResponse(pagePath))
         else:
@@ -403,12 +469,24 @@ async def getAuth(connection, request):
         
         connection.authToken = parsed_cookies.get("authToken")
 
-async def wsSendEncrypted(ws: ServerConnection, data: str):
+async def wsSendEncrypted(ws: ServerConnection, data: str, trackerId=None):
+    if trackerId != None:
+        dataParsed = json.loads(data)
+        dataParsed["trackerID"] = trackerId
+        data = json.dumps(dataParsed)
+
     iv = secrets.token_bytes(12)
     encryptor = Cipher(algorithms.AES256(getattr(ws, "secretKey")), modes.GCM(iv)).encryptor()
     ciphertext = encryptor.update(data.encode("utf-8")) + encryptor.finalize() + encryptor.tag
 
     await ws.send(json.dumps({"encryption":"AES","iv":iv.hex(),"body":ciphertext.hex()}))
+
+async def wsBroadcastEncrypted(clients: list[ServerConnection], data: str):
+    for client in clients:
+        try:
+            await wsSendEncrypted(client, data)
+        except Exception:
+            traceback.print_exc()
 
 async def checkAuthTokenEncrypted(ws: ServerConnection, authToken: str):
     if not isValidToken(authToken):
@@ -447,6 +525,10 @@ async def wsHandler(ws: ServerConnection):
                 decryptedText = decryptor.update(bytes.fromhex(msgDecoded["body"]))[:-16]
                 
                 decryptedBody = json.loads(decryptedText.decode("utf-8"))
+                trackerId = None
+
+                if "trackerID" in decryptedBody:
+                    trackerId = decryptedBody["trackerID"]
 
                 if decryptedBody["type"] == "login":
                     found = False
@@ -469,7 +551,7 @@ async def wsHandler(ws: ServerConnection):
                         userinfo = getUserInfoFromToken(authToken)
 
                         if userinfo == None:
-                            await wsSendEncrypted(ws, json.dumps({"type":"reqUserFailed", "message": "User not found!"}))
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqUserFailed", "message": "User not found!"}), trackerId)
                             continue
                         
                         await wsSendEncrypted(ws, json.dumps({
@@ -477,26 +559,81 @@ async def wsHandler(ws: ServerConnection):
                             "username": userinfo["USRNAME"],
                             "UID": userinfo["UID"],
                             "friends": userinfo["Friends"],
-                            "chats": userinfo["Chats"]
-                        }))
+                            "chats": userinfo["Chats"],
+                            "pfp": userinfo["PFP"],
+                            "displayname": userinfo["Displayname"],
+                            "birthday": userinfo["Birthday"],
+                            "birthdayV": userinfo["BirthdayV"],
+                            "accCreated": userinfo["AccCreated"],
+                            "bio": userinfo["Bio"],
+                            "pronouns": userinfo["Pronouns"]
+                        }), trackerId)
                     else:
                         break
 
                 if decryptedBody["type"] == "reqChat":
                     if await checkAuthTokenEncrypted(ws, authToken):
                         if not tokenInChat(authToken, decryptedBody["CID"]):
-                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"User not in chat!"}))
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"User not in chat!"}), trackerId)
                             continue
-                        
+
                         chat = getChatFromCID(decryptedBody["CID"])
 
                         if chat == None:
-                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"Chat not found!"}))
+                            await wsSendEncrypted(ws, json.dumps({"type":"reqChatFailed","message":"Chat not found!"}), trackerId)
                             continue
 
-                        await wsSendEncrypted(ws, json.dumps({"type":"reqChatSuccess", "chat": chat}))
+                        await wsSendEncrypted(ws, json.dumps({"type":"reqChatSuccess", "chat": chat}), trackerId)
                     else:
                         break
+                
+                if decryptedBody["type"] == "reqUsersList":
+                    if await checkAuthTokenEncrypted(ws, authToken):
+                        userInfoList = []
+
+                        for usr in decryptedBody["users"]:
+                            userinfo = getUserInfoFromUserId(usr)
+
+                            if userinfo != None:
+                                userInfoList.append({
+                                    "username": userinfo["USRNAME"],
+                                    "UID": userinfo["UID"],
+                                    "pfp": userinfo["PFP"],
+                                    "displayname": userinfo["Displayname"]
+                                })
+                        
+                        await wsSendEncrypted(ws, json.dumps({"type":"reqUsersListSuccess", "users":userInfoList}), trackerId)
+                    else:
+                        break
+                
+                if decryptedBody["type"] == "sendMsg":
+                    if await checkAuthTokenEncrypted(ws, authToken):
+                        for chat in chats:
+                            if chat["CID"] == decryptedBody["CID"]:
+                                chat["messages"].append({"time": time.time(), "content": decryptedBody["msg"], "UID": getUserIdFromAuthToken(authToken)})
+
+                        newChat = getChatFromCID(decryptedBody["CID"])
+
+                        broadcastClients = []
+                        for client in WS_CLIENTS:
+                            cAuthToken = getattr(client, "authToken")
+
+                            if cAuthToken == None:
+                                continue
+                            
+                            userInfo = getUserInfoFromToken(cAuthToken)
+
+                            if userInfo == None:
+                                continue
+                            
+                            if decryptedBody["CID"] in userInfo["Chats"]:
+                                broadcastClients.append(client)
+                        
+
+                        await wsBroadcastEncrypted(broadcastClients, json.dumps({"type":"chatUpdate", "chat": newChat}))
+                    else:
+                        break
+
                 continue
             
 
@@ -620,4 +757,5 @@ if __name__ == "__main__":
     for sk in socketList:
         sk.close()
 
+    saveUsers()
     saveChats()

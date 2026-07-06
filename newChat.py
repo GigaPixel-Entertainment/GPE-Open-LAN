@@ -19,8 +19,10 @@ with open(CHATS_DIR / "meta.key", "rb") as f:
 
 fernet = Fernet(key)
 
+chatName = input("Chat/Server name: ")
+
 with open(CHATS_DIR / f"{CHAT_COUNT}.enc", "wb") as f:
-    f.write(msgpack.packb({"meta": {"CID":CHAT_COUNT}, "messages": [{"time": int(time.time()), "content": fernet.encrypt("Welcome to the new Chat!".encode("utf-16")), "user": 0}]}))
+    f.write(msgpack.packb({"meta": {"CID":CHAT_COUNT, "Type": "forced-server"}, "Name": chatName, "messages": [{"time": int(time.time()), "content": fernet.encrypt("Welcome to the new Chat!".encode("utf-16")), "UID": 0}]}))
     f.close()
 
 print("Chat created successfully!")
