@@ -1,3 +1,6 @@
+# Copyright (C) 2026  Alex Gan
+# Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
+
 import pathlib
 import msgpack
 import bcrypt

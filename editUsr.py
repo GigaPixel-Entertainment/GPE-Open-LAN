@@ -1,3 +1,6 @@
+# Copyright (C) 2026  Alex Gan
+# Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
+
 import pathlib
 import msgpack
 
@@ -10,7 +13,7 @@ with open(USERS_DIR / f"{username}.usr", "rb+") as f:
     userData = msgpack.unpackb(f.read())
 
     print(userData)
-    userData["USRNAME"] = "GigaPixel_Entertainment"
+    userData["USRNAME"] = ""
     print(userData)
 
     f.seek(0)
