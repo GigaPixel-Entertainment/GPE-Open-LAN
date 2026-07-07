@@ -16,10 +16,10 @@
         <h1 class="title center text font">LOGIN</h1>
 
         <form id="loginForm">
-            <input type="text" placeholder="username" class="font" id="username" required>
+            <input type="text" placeholder="username" class="font largeEntry" id="username" required>
             <div id="pwdWrapper">
-                <input type="password" placeholder="password" class="font" id="password" required>
-                <button id="showPwd" type="button" onclick="togglePwd()"><img src="Media/eyeOpen.png" id="showPwdImg"></button>
+                <input type="password" placeholder="password" class="font largeEntry" id="password" required>
+                <button class="showPwd" id="showPwd" type="button" onclick="togglePwd()"><img src="Media/eyeOpen.png" class="showPwdImg" id="showPwdImg"></button>
             </div>
             <a id="forgetPwd" class="font text" href="https://forms.gle/AoFebgPKb3v8n57Z9" target="_blank">Forget password?</a>
             <div id="submitWrapper">
@@ -51,7 +51,6 @@
         <script>
             // Toggle password visibility
             const pwdEntry = document.getElementById("password")
-            const showPwdBtn = document.getElementById("showPwd")
             const showPwdImg = document.getElementById("showPwdImg")
 
             function togglePwd() {
