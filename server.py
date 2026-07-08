@@ -36,6 +36,7 @@ REQUIRED IMPORTS:
 (use pip to install)
 cryptography,
 websockets,
+collections,
 http,
 io,
 pillow,
@@ -59,12 +60,13 @@ os
 """)
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from websockets.asyncio.server import serve, ServerConnection
+from websockets.asyncio.server import serve, ServerConnection, Request
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidTag
 from http.server import BaseHTTPRequestHandler
 from cryptography.fernet import Fernet
+from collections.abc import Iterable
 from http import cookies
 from io import BytesIO
 from PIL import Image
@@ -119,13 +121,13 @@ FILEEXT_TO_MIME = {
     ".css": "text/css; charset=utf-8"
 }
 
-WS_CLIENTS = set()
+WS_CLIENTS: set[ServerConnection] = set()
 VALID_TOKENS = {}
 SHORT_REDIRECT_TOKENS = {}
 
 RATELIMITED_IPS = []
 
-DEFAULT_PFPS = []
+DEFAULT_PFPS: list[str] = []
 
 print("Generating encryption key")
 PRIV_KEY = ec.generate_private_key(ec.SECP256R1())
@@ -142,17 +144,24 @@ print("Dummy hash generated successfully")
 users = []
 
 chats = []
-fernet = None
+
+print("Reading save key")
+with open(SAVE_KEY, "rb") as f:
+    saveKey = f.read()
+    f.close()
+
+fernet = Fernet(saveKey)
+print("Save key loaded")
 
 class HTTPRequestParser(BaseHTTPRequestHandler):
-    def __init__(self, request_bytes):
+    def __init__(self, request_bytes: bytes):
         self.rfile = BytesIO(request_bytes)
         self.raw_requestline = self.rfile.readline()
         self.error_code = self.error_message = None
         
         self.parse_request()
 
-    def send_error(self, code, message=None, explain=None):
+    def send_error(self, code: int, message: str | None=None, explain: str | None=None):
         self.error_code = code
         self.error_message = message
 
@@ -162,7 +171,7 @@ def genSaveKey():
         f.write(key)
         f.close()
 
-def validateImgFile(path):
+def validateImgFile(path: pathlib.Path | BytesIO):
     try:
         with Image.open(path) as img:
             img.verify()
@@ -180,7 +189,7 @@ def loadPfps():
                     fileContents = f.read()
                     f.close()
                 
-                base64Pfp = resizePfpBytes(fileContents)
+                base64Pfp: str = resizePfpBytes(fileContents)
 
                 DEFAULT_PFPS.append(base64Pfp)
             except:
@@ -191,8 +200,6 @@ def loadPfps():
     print("Loaded default PFPs")
 
 def loadUsers():
-    global fernet
-
     print("Loading users")
 
     if not USERS_DIR.exists():
@@ -201,13 +208,6 @@ def loadUsers():
     if not SAVE_KEY.exists():
         print("Generating new save key!")
         genSaveKey()
-
-    print("Reading save key")
-    with open(SAVE_KEY, "rb") as f:
-        saveKey = f.read()
-        f.close()
-
-    fernet = Fernet(saveKey)
 
     for usr in USERS_DIR.iterdir():
         if usr.is_file() and usr.suffix == ".usr":
@@ -242,8 +242,6 @@ def loadUsers():
     print("Users loaded")
 
 def loadChats():
-    global fernet
-
     print("Loading chats")
 
     if not CHATS_DIR.exists():
@@ -275,7 +273,13 @@ def saveUsers():
     for usr in users:
         try:
             with open(USERS_DIR / f"{usr["USRNAME"]}.usr", "wb") as f:
-                f.write(fernet.encrypt(msgpack.packb(usr)))
+                packed: bytes | None = msgpack.packb(usr)
+
+                if packed:
+                    f.write(fernet.encrypt(packed))
+                else:
+                    print(f"Failed to save user {usr["USRNAME"]}!")
+
                 f.close()
         except:
             traceback.print_exc()
@@ -297,8 +301,14 @@ def saveChats():
                     messageSaving = copy.deepcopy(msg)
                     messageSaving["content"] = fernet.encrypt(msgContents.encode("utf-16"))
                     messages.append(messageSaving)
+                
+                packed: bytes | None = msgpack.packb({"meta":metadata,"Name":chat["Name"],"messages":messages})
 
-                f.write(msgpack.packb({"meta":metadata,"Name":chat["Name"],"messages":messages}))
+                if packed:
+                    f.write(packed)
+                else:
+                    print(f"Failed to save chat! {chat}")
+
                 f.close()
         except Exception:
             traceback.print_exc()
@@ -306,14 +316,14 @@ def saveChats():
     
     print("Chats saved")
         
-def getUsernameFromAuthToken(token):
+def getUsernameFromAuthToken(token: str | None) -> str | None:
     for username, tk in VALID_TOKENS.items():
         if tk["TOKEN"] == token:
             return username
     
     return None
 
-def getUserIdFromAuthToken(token):
+def getUserIdFromAuthToken(token: str | None) -> int | None:
     userInfo = getUserInfoFromToken(token)
 
     if userInfo == None:
@@ -321,20 +331,20 @@ def getUserIdFromAuthToken(token):
     
     return userInfo["UID"]
 
-def getUserInfoFromUsername(username):
+def getUserInfoFromUsername(username: str) -> dict | None:
     for user in users:
         if user["USRNAME"] == username:
             return user
         
     return None
 
-def getUserInfoFromUserId(UID):
+def getUserInfoFromUserId(UID: int) -> dict | None:
     for user in users:
         if user["UID"] == UID:
             return user
     return None
 
-def getUserInfoFromToken(token):
+def getUserInfoFromToken(token: str | None) -> dict | None:
     username = getUsernameFromAuthToken(token)
 
     if username == None:
@@ -342,14 +352,17 @@ def getUserInfoFromToken(token):
     
     return getUserInfoFromUsername(username)
 
-def getChatFromCID(CID):
+def getChatFromCID(CID: int) -> dict | None:
     for chat in chats:
         if chat["CID"] == CID:
             return chat
     
     return None
 
-def setUserProperty(UID, PropertyName, Value):
+def setUserProperty(UID: int | None, PropertyName: str, Value) -> bool:
+    if not UID:
+        return False
+
     success = False
     for usr in users:
         if usr["UID"] == UID:
@@ -359,7 +372,7 @@ def setUserProperty(UID, PropertyName, Value):
 
     return success
 
-def tokenInChat(token, CID):
+def tokenInChat(token: str | None, CID: int) -> bool:
     chat = getChatFromCID(CID)
 
     if chat == None:
@@ -408,7 +421,7 @@ def formatHttpResponse(filePath: pathlib.Path):
         "\r\n"
     ).encode("utf-8") + fileContents
 
-def formatLoginResponse(username, cloudflare):
+def formatLoginResponse(username: str, cloudflare: bool):
     if not username:
         return formatErrorResponse(500)
 
@@ -422,7 +435,7 @@ def formatLoginResponse(username, cloudflare):
         "\r\n"
     ).encode("utf-8")
 
-def formatErrorResponse(statusCode):
+def formatErrorResponse(statusCode: int):
     if statusCode == 400:
         return "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n".encode("utf-8")
     elif statusCode == 401:
@@ -479,7 +492,8 @@ def handleRequest(sk: socket.socket):
 
         if page == "/api/wsurl":
             currUrl = parsed.headers.get("Domain-Url")
-            if "openlan.gigapixel.cc" in currUrl:
+
+            if currUrl and "openlan.gigapixel.cc" in currUrl:
                 # POV: Cloudflare
                 sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: ws://openlanws.gigapixel.cc\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
             else:
@@ -487,7 +501,7 @@ def handleRequest(sk: socket.socket):
         elif page == "/api/wssurl":
             currUrl = parsed.headers.get("Domain-Url")
 
-            if "openlan.gigapixel.cc" in currUrl:
+            if currUrl and "openlan.gigapixel.cc" in currUrl:
                 # POV: Cloudflare
                 sk.sendall(f"HTTP/1.1 200 OK\r\nUrl: wss://openlanws.gigapixel.cc\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".encode("utf-8"))
             else:
@@ -516,7 +530,10 @@ def isValidRedirectToken(redirectToken):
     return None
 
 
-def isValidToken(authToken, username=None):
+def isValidToken(authToken: str | None, username=None):
+    if authToken == None:
+        return False
+
     if username:
         if username not in VALID_TOKENS:
             return False
@@ -539,7 +556,7 @@ def isValidToken(authToken, username=None):
 
     return False
 
-def resizePfpBytes(pfpBytes):
+def resizePfpBytes(pfpBytes: bytes):
     pfpStream = BytesIO(pfpBytes)
 
     if not validateImgFile(pfpStream):
@@ -554,7 +571,7 @@ def resizePfpBytes(pfpBytes):
     resizedPfp = base64.b64encode(resizedBytes).decode("utf-8")
     return f"data:image/{format.lower()};base64,{resizedPfp}"
 
-def resizePfp(pfp):
+def resizePfp(pfp: str):
     if "," in pfp:
         pfp = pfp.split(",")[1]
     pfpBytes = base64.b64decode(pfp)
@@ -563,7 +580,7 @@ def resizePfp(pfp):
 def validateUsername(username: str):
     return username.replace("_", "").isalnum() and username.isascii()
 
-async def getAuth(connection, request):
+async def getAuth(connection: ServerConnection, request: Request):
     cookie_header = request.headers.get("Cookie")
     
     if cookie_header:
@@ -572,9 +589,9 @@ async def getAuth(connection, request):
         
         parsed_cookies = {key: morsel.value for key, morsel in parser.items()}
         
-        connection.authToken = parsed_cookies.get("authToken")
+        setattr(connection, "authToken", parsed_cookies.get("authToken"))
 
-async def wsSendEncrypted(ws: ServerConnection, data: str, trackerId=None):
+async def wsSendEncrypted(ws: ServerConnection, data: str, trackerId: int | None=None):
     if trackerId != None:
         dataParsed = json.loads(data)
         dataParsed["trackerID"] = trackerId
@@ -586,14 +603,14 @@ async def wsSendEncrypted(ws: ServerConnection, data: str, trackerId=None):
 
     await ws.send(json.dumps({"encryption":"AES","iv":iv.hex(),"body":ciphertext.hex()}))
 
-async def wsBroadcastEncrypted(clients: list[ServerConnection], data: str):
+async def wsBroadcastEncrypted(clients: Iterable[ServerConnection], data: str):
     for client in clients:
         try:
             await wsSendEncrypted(client, data)
         except Exception:
             traceback.print_exc()
 
-async def checkAuthTokenEncrypted(ws: ServerConnection, authToken: str):
+async def checkAuthTokenEncrypted(ws: ServerConnection, authToken: str | None):
     if not isValidToken(authToken):
         await wsSendEncrypted(ws, json.dumps({"type":"auth_expired"}))
         await ws.close()
@@ -604,7 +621,7 @@ async def wsHandler(ws: ServerConnection):
     WS_CLIENTS.add(ws)
 
     try:
-        authToken = getattr(ws, "authToken", None)
+        authToken: str | None = getattr(ws, "authToken", None)
 
         async for message in ws:
             msgDecoded = json.loads(message)
@@ -625,7 +642,7 @@ async def wsHandler(ws: ServerConnection):
 
                 if key == None:
                     print("Encrypted message sent without key!")
-                    ws.close()
+                    await ws.close()
                     raise ConnectionRefusedError
                 
                 if len(key) != 32:
@@ -692,7 +709,7 @@ async def wsHandler(ws: ServerConnection):
                 
                 if decryptedBody["type"] == "signup":
                     if not "realname" in decryptedBody or not "username" in decryptedBody or not "password" in decryptedBody or not "securityKey" in decryptedBody:
-                        await wsSendEncrypted({"type": "signupFailed", "reason": "Request error. Please contact the server owner for help."})
+                        await wsSendEncrypted(ws, json.dumps({"type": "signupFailed", "reason": "Request error. Please contact the server owner for help."}))
                         continue
 
                     allowed = True
@@ -997,7 +1014,7 @@ async def wsHandler(ws: ServerConnection):
     finally:
         WS_CLIENTS.remove(ws)
 
-async def shutdownWs(shutdownEvent):
+async def shutdownWs(shutdownEvent: asyncio.Event):
     print("Stopping Websocket!")
     for ws in list(WS_CLIENTS):
         await ws.close()
@@ -1005,7 +1022,7 @@ async def shutdownWs(shutdownEvent):
     shutdownEvent.set()
     asyncio.get_running_loop().stop()
 
-async def wsListen(ipAddrs, context, shutdownEvent):
+async def wsListen(ipAddrs: list, context: ssl.SSLContext, shutdownEvent: asyncio.Event):
     servers = []
 
     for addr in ipAddrs:
