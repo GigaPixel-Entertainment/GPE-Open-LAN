@@ -54,7 +54,7 @@ form {
     margin: 4px;
 }
 
-input[type="text"], input[type="password"] {
+.largeEntry {
     display: block;
     width: 90%;
     font-size: 2em;
@@ -64,7 +64,21 @@ input[type="text"], input[type="password"] {
     padding: .75em;
 }
 
-input[type="text"]::placeholder, input[type="password"]::placeholder {
+.largeEntry::placeholder {
+    color: var(--placeholder);
+}
+
+.smallEntry {
+    display: block;
+    width: 90%;
+    font-size: 1.5em;
+    background-color: var(--acc3);
+    color: var(--text);
+    border: none;
+    padding: .75em;
+}
+
+.smallEntry::placeholder {
     color: var(--placeholder);
 }
 
@@ -88,7 +102,7 @@ input[type="submit"]:hover {
     width: 100%;
 }
 
-#showPwd {
+.showPwd {
     position: absolute;
     top: 50%;
     right: -1em;
@@ -98,7 +112,17 @@ input[type="submit"]:hover {
     cursor: pointer;
 }
 
-#showPwd > img {
+.showPwd2 {
+    position: absolute;
+    top: 50%;
+    right: 1em;
+    transform: translate(-50%, -50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.showPwdImg {
     max-width: 5vw;
     max-height: 5vh;
     aspect-ratio: 1.2;
@@ -163,6 +187,27 @@ input[type="submit"]:hover {
 }
 
 #signUp {
+    width: 80%;
+    font-size: 2em;
+    background: none;
+    color: var(--text2);
+    border: 2px solid var(--text2);
+    border-radius: 0;
+    cursor: pointer;
+}
+
+#loginWrapper {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    text-align: right;
+}
+
+#loginLabel {
+    font-style: italic;
+}
+
+#login {
     width: 80%;
     font-size: 2em;
     background: none;

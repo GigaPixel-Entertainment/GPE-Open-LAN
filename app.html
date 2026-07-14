@@ -6,648 +6,10 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="CSS/app.css">
         <link rel="icon" href="Media/LogoSquare.png">
         <title>Open-LAN</title>
 
-        <style>
-            :root {
-                --bg: #1a3053;
-                --acc: #113963;
-                --acc2: #145492;
-                --acc3: #3e84c5;
-                --acc4: #0c273f;
-                --acc5: #214685;
-                --acc6: #3e77d7;
-                --text: #FFFFFF;
-                --text2: #cee1f3;
-                --placeholder: #BBBBBB;
-                --button: #a1c3c8;
-                --button-press: #90b2b7;
-                --highlight: #6ea6db;
-                --sendButtonGreen: #92c37c;
-                --rose: #e99898;
-            }
-
-            html, body {
-                height: 100vh;
-                overflow: hidden;
-            }
-
-            body {
-                background-color: var(--bg);
-                margin: 0;
-            }
-
-            footer {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                color: white;
-                font-family: "Fire Code", monospace;
-                font-size: small;
-                z-index: 99;
-            }
-
-            footer > a {
-                color: white;
-                text-decoration-color: white;
-            }
-
-            #serverList {
-                width: 5%;
-                height: 100%;
-                background-color: var(--acc2);
-            }
-
-            #msgBoxHeader {
-                position: absolute;
-                top: 0;
-                left: 5%;
-                width: 95%;
-                background-color: var(--acc4);
-                display: flex;
-            }
-
-            #msgBoxHeader > p {
-                font-style: italic;
-                font-size: 1.25em;
-                font-weight: 100;
-                margin-left: 1em;
-                margin-top: 1em;
-                margin-bottom: 1em;
-                width: 85%;
-            }
-
-            #msgBoxHeader > button {
-                width: 15%;
-                border: none;
-                border-radius: 0;
-                background-color: var(--acc3);
-                cursor: pointer;
-                font-size: 1.25em;
-            }
-
-            #msgBox {
-                position: absolute;
-                width: 95%;
-                height: calc(100% - 40px - 1.25em);
-                bottom: 0;
-                left: 5%;
-                background-color: var(--bg);
-                overflow-x: hidden;
-            }
-
-            #friendsHeader {
-                position: absolute;
-                display: flex;
-                top: 0;
-                right: 0;
-                width: 100%;
-                height: 10%;
-                background-color: var(--highlight);
-                justify-content: center;
-                align-items: center;
-                flex-direction: row;
-            }
-
-            #friendsHeader > img {
-                width: 4em;
-                height: 4em;
-                background-color: var(--acc2);
-                margin: 1em;
-            }
-
-            #friendsHeader > p {
-                display: block;
-                font-size: 2em;
-                margin: auto;
-                margin-left: 0;
-            }
-
-            #friendsList {
-                position: absolute;
-                width: 100%;
-                height: 90%;
-                background-color: var(--acc3);
-                right: 0;
-                top: 10%;
-            }
-
-            #friendsList > p {
-                margin-left: 1em;
-            }
-
-            #textEntryWrapper {
-                position: absolute;
-                width: 80%;
-                height: fit-content;
-                background-color: var(--acc);
-                bottom: 2.5%;
-                right: 7.5%;
-                padding: 0;
-            }
-
-            #textEntry {
-                width: calc(92.5% - 1em);
-                font-size: 1.5em;
-                margin: .25em;
-                margin-bottom: 0;
-                padding: .25em;
-                border: none;
-                background-color: var(--acc5);
-                color: var(--text);
-                outline: none;
-                max-height: 16vh;
-                field-sizing: content;
-                resize: none;
-            }
-
-            #sendMsg {
-                position: absolute;
-                width: 7%;
-                font-size: 1.5em;
-                margin: .25em auto;
-                height: calc(100% - .5em);
-                border: none;
-                border-radius: 0;
-                background-color: var(--acc5);
-                color: var(--sendButtonGreen);
-                font-weight: bolder;
-                cursor: pointer;
-            }
-
-            #sendMsg:hover {
-                background-color: var(--bg);
-            }
-
-            .smallTime {
-                position: absolute;
-                width: 100%;
-                margin: 0;
-                margin-top: .8em;
-                font-size: .65em;
-                color: darkgray;
-                visibility: hidden;
-            }
-
-            #textEntry::placeholder {
-                color: var(--acc4);
-                font-style: italic;
-            }
-
-            #friendsListWrapper {
-                position: absolute;
-                top: 0;
-                right: 0;
-                width: 25%;
-                height: 100%;
-                box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
-                transform: translateX(calc(100% + 8px));
-                transition: transform 500ms ease-in-out;
-            }
-
-            #toggleFriendsList {
-                position: absolute;
-                left: 0;
-                bottom: 0;
-                transform: translate(-90%, 100%);
-                width: 20%;
-                font-size: 2em;
-                border: none;
-                border-radius: 0;
-                background-color: var(--acc6);
-                font-weight: 700;
-                text-align: center;
-                cursor: pointer;
-            }
-
-            #myProfileScreen {
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                z-index: 3;
-                background-color: var(--bg);
-                box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
-                transform: translateY(calc(-100% - 8px));
-
-                transition: transform 0.5s ease-in-out;
-            }
-
-            #myProfileHeader {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                background-color: var(--acc4);
-                display: flex;
-            }
-
-            #myProfileHeader > p {
-                font-style: italic;
-                font-size: 1.25em;
-                font-weight: 100;
-                margin-left: 1em;
-                margin-top: 1em;
-                margin-bottom: 1em;
-                width: 85%;
-            }
-
-            #myProfileHeader > button {
-                width: 15%;
-                border: none;
-                border-radius: 0;
-                background-color: var(--acc3);
-                cursor: pointer;
-                font-size: 1.25em;
-            }
-
-            #myProfileLeft {
-                position: absolute;
-                left: 0;
-                bottom: 0;
-                width: 40%;
-                height: 90%;
-            }
-
-            #currPFP {
-                width: 25%;
-                aspect-ratio: 1;
-                margin-left: 5%;
-                border-radius: 999999999px;
-                border: 6px solid var(--acc4);
-            }
-
-            #currPFPOverlay {
-                position: absolute;
-                width: 25%;
-                aspect-ratio: 1;
-                margin-left: 5%;
-                border-radius: 999999999px;
-                border: 6px solid var(--acc4);
-                left: 0;
-                opacity: .5;
-                visibility: hidden;
-                pointer-events: none;
-            }
-
-            #currPFPFile {
-                position: absolute;
-                width: 25%;
-                aspect-ratio: 1;
-                margin-left: 5%;
-                border-radius: 99999999px;
-                border: 6px solid var(--acc4);
-                left: 0;
-                opacity: .5;
-                pointer-events: all;
-                opacity: 0;
-                cursor: pointer;
-            }
-
-            #myProfileRight {
-                position: absolute;
-                right: 0;
-                bottom: 0;
-                width: 60%;
-                height: 90%;
-            }
-
-            #myProfileEditingList {
-                display: flex;
-                flex-direction: column;
-            }
-
-            #myProfileEditingList > div {
-                display: flex;
-                flex-direction: row;
-                width: 100%;
-                align-items: center;
-                justify-content: end;
-            }
-
-            #myProfileEditingList > div > p {
-                font-size: 2em;
-                font-weight: 500;
-                width: 10em;
-                text-align: right;
-            }
-
-            #myProfileEditingList > div > input {
-                font-size: 2em;
-                height: 1em;
-                margin-left: .5em;
-                margin-right: .5em;
-                width: 15em;
-                border: none;
-                border-radius: 0;
-                background-color: var(--acc5);
-                padding: .25em;
-            }
-
-            .editBtn {
-                font-size: 2em;
-                width: 4em;
-                background-color: var(--rose);
-                border: none;
-                border-radius: 0;
-                cursor: pointer;
-                margin-right: .5em;
-            }
-
-            .saveBtn {
-                font-size: 2em;
-                width: 4em;
-                background-color: var(--sendButtonGreen);
-                border: none;
-                border-radius: 0;
-                cursor: pointer;
-                margin-right: .5em;
-            }
-
-            #rightSideActions {
-                position: absolute;
-                bottom: 1em;
-                right: 1em;
-                width: 100%;
-                height: 10%;
-                display: flex;
-                flex-direction: row-reverse;
-            }
-
-            #logoutBtn {
-                background-color: black;
-                border: none;
-                font-size: 2em;
-                font-weight: 700;
-                width: 10em;
-                box-shadow: 0px 0px 4px 4px white;
-                cursor: pointer;
-                padding: 0;
-            }
-
-            #pfpScalingWrapper {
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                background-color: rgba(0, 0, 0, .5);
-                visibility: hidden;
-                z-index: 3;
-                opacity: 0;
-
-                transition: opacity 0.5s linear;
-            }
-
-            #pfpScaling {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                width: 50%;
-                height: 75%;
-                transform: translate(-50%, -50%);
-                background-color: var(--acc2);
-            }
-
-            #pfpPreview {
-                position: absolute;
-                max-width: 75%;
-                height: 75%;
-                aspect-ratio: 1;
-                left: 50%;
-                top: 0;
-                transform: translateX(-50%);
-                border-radius: 99999px;
-                border: 6px solid var(--acc4);
-                margin-top: 1%;
-            }
-
-            #pfpPreviewActions {
-                position: absolute;
-                width: 100%;
-                height: 10%;
-                bottom: 1%;
-                display: flex;
-                justify-content: space-evenly;
-
-            }
-
-            #pfpPreviewActions > button {
-                width: 40%;
-                font-size: 2em;
-                cursor: pointer;
-            }
-
-            #pfpPreviewActionsSet {
-                background-color: var(--button);
-                border: none;
-            }
-
-            #pfpPreviewActionsSet:hover {
-                background-color: var(--button-press);
-            }
-
-            #pfpPreviewActionsCancel {
-                background: none;
-                border: 2px solid var(--button);
-                color: var(--button);
-            }
-
-            #pfpPreviewActionsCancel:hover {
-                border-color: var(--button-press);
-                color: var(--button-press);
-            }
-
-            #accInfo {
-                background-color: var(--acc3);
-                margin-left: 5%;
-                margin-right: 5%;
-                width: 90%;
-                margin-top: .5em;
-            }
-
-            #accInfoDisplayname {
-                font-weight: 400;
-                text-align: center;
-                font-size: 2em;
-                margin-bottom: 0;
-            }
-
-            #accInfoUsername {
-                font-style: italic;
-                font-weight: 200;
-                text-align: center;
-                font-size: 1.5em;
-                margin-top: 0;
-                margin-bottom: 0;
-            }
-
-            #accInfoUID {
-                font-weight: 200;
-                text-align: center;
-                font-size: 1.25em;
-                margin-top: 0;
-            }
-
-            #accCreated {
-                background-color: var(--acc3);
-                margin-left: 5%;
-                margin-right: calc(45% - 2em);
-                width: 50%;
-                padding: 1em;
-            }
-
-            #accCreated > p {
-                font-size: 1.25em;
-                margin-bottom: 0;
-                margin-top: 0;
-            }
-
-            #bio {
-                margin-left: 5%;
-                margin-top: 5%;
-                height: 30%;
-            }
-
-            #bioLabel {
-                font-size: 1.5em;
-                margin-bottom: 0;
-            }
-
-            #bioArea {
-                resize: none;
-                width: 90%;
-                height: 75%;
-                background-color: var(--acc3);
-                border: none;
-                outline: none;
-                font-size: 1.5em;
-            }
-
-            #loadingOverlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                background-color: var(--bg);
-                width: 100%;
-                height: 100%;
-                z-index: 98;
-                cursor: wait;
-
-                transition: opacity 0.5s linear;
-            }
-
-            #loadingOverlay > img {
-                position: absolute;
-                max-width: 50%;
-                max-height: 50%;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-
-            #loadingOverlay > p {
-                position: absolute;
-                bottom: 10%;
-                width: 100%;
-                text-align: center;
-                font-size: 2em;
-            }
-
-            .font {
-                font-family: "Fira Code", monospace;
-            }
-
-            .white {
-                color: var(--text);
-            }
-
-            .black {
-                color: black;
-            }
-
-            .gray {
-                color: gray;
-            }
-
-            .scroll {
-                overflow-y: scroll;
-            }
-
-            .messageDiv {
-                width: 100%;
-                background-color: var(--bg);
-                display: flex;
-                justify-content: space-between;
-                padding: 1em;
-                padding-bottom: 0;
-            }
-
-            .messageDiv:hover {
-                background-color: var(--acc);
-            }
-
-            .invis { 
-                opacity: 0;
-            }
-
-            .rClickMenu {
-                position: absolute;
-                width: 224px;
-                padding: 8px;
-                background-color: var(--acc);
-                left: 0;
-                top: 0;
-                border: 2px solid var(--acc2);
-                display: flex;
-                flex-direction: column;
-                visibility: hidden;
-            }
-
-            .rClickMenuOption {
-                width: 100%;
-                font-size: 1.25em;
-                background-color: var(--acc);
-                border: none;
-                cursor: pointer;
-            }
-
-            .rClickMenuOption[disabled] {
-                cursor: auto;
-                color: gray;
-            }
-
-            .rClickMenuOption:hover {
-                background-color: var(--acc4);
-            }
-
-            .rClickMenuOption[disabled] {
-                background-color: var(--acc);
-            }
-
-            ::-webkit-scrollbar {
-                width: 5px;
-            }
-            
-            ::-webkit-scrollbar-track {
-                background: rgb(0, 0, 0, 0); 
-            }
-            
-            ::-webkit-scrollbar-thumb {
-                background: #333;
-                border-radius: 10000px;
-            }
-            
-            ::-webkit-scrollbar-thumb:hover {
-                background: #111;
-            }
-
-            input[type="date"]::-webkit-calendar-picker-indicator {
-                filter: invert(1);
-            }
-        </style>
     </head>
     <body>
         <div id="serverList"></div>
@@ -667,6 +29,13 @@
             <div id="friendsHeader">
                 <img src="Media/FriendsIcon.png">
                 <p class="font black">friends (0)</p>
+                <div id="friendReqBtnWrapper">
+                    <button class="font black" id="friendReqSBtn" onclick="toggleFriendReqScreen()">+</button>
+                </div>
+                <div id="friendNotifWrapper">
+                    <button class="font black" id="friendNotifBtn">!</button>
+                    <p class="font white" id="friendNotifNum">1</p>
+                </div>
                 <button id="toggleFriendsList" class="font white" onclick="hideFriendsList()"><</button>
             </div>
             <div id="friendsList" class="scroll">
@@ -710,7 +79,7 @@
                     </div>
                     <div>
                         <p class="font white">displayname</p>
-                        <input type="text" disabled class="font gray" id="currDisplayname" maxlength="30">
+                        <input type="text" disabled class="font gray" id="currDisplayname" maxlength="30" spellcheck="false">
                         <button class="font black editBtn" id="editDisplayname">edit</button>
                     </div>
                     <div>
@@ -720,13 +89,45 @@
                     </div>
                     <div>
                         <p class="font white">pronouns</p>
-                        <input type="text" disabled class="font gray" id="currPronouns" maxlength="10">
+                        <input type="text" disabled class="font gray" id="currPronouns" maxlength="10" spellcheck="false">
                         <button class="font black editBtn" id="editPronouns">edit</button>
                     </div>
                 </div>
 
                 <div id="rightSideActions">
                     <button id="logoutBtn" class="font white">logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="friendReqScreen">
+            <button class="backBtn font white" onclick="toggleFriendReqScreen()">back</button>
+            <div id="findFriends">
+                <div id="friendSearch">
+                    <img id="friendSearchIcon" src="Media/searchIcon.png">
+                    <input type="text" id="friendSearchbar" class="font white" placeholder="find new friends..." spellcheck="false" maxlength="30">
+                </div>
+                <div id="friendSearchResult" class="scroll">
+
+                </div>
+            </div>
+
+            <div id="currRequests">
+                <div id="incomingRequests">
+                    <div id="incomingHeader" class="header">
+                        <p class="font white">incoming requests</p>
+                    </div>
+                    <div id="incomingList" class="scroll">
+
+                    </div>
+                </div>
+                <div id="outgoingRequests">
+                    <div id="outgoingHeader" class="header">
+                        <p class="font white">outgoing requests</p>
+                    </div>
+                    <div id="outgoingList" class="scroll">
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -756,7 +157,103 @@
     <footer>
         Open-LAN is open-source under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GNU General Public License</a> and available on <a href="https://github.com/GigaPixel-Entertainment/GPE-Open-LAN" target="_blank">Github</a>
     </footer>
+    <script src="JS/stop.js"></script>
+    <script>
+        // Userinfo Mgr
+        const userInfoCache = []
 
+        async function reqUsrInfo(UID) {
+            for (let index = 0; index < userInfoCache.length; index++) {
+                const userInfo = userInfoCache[index];
+                if (userInfo["UID"] == UID) {
+                    return userInfo
+                }
+            }
+
+            usr = await request(JSON.stringify({"type": "reqUsersList", "users": [UID]}))
+
+            usr["users"].forEach((userInfo) => {
+                userInfoCache.push(userInfo)
+            })
+
+            return await reqUsrInfo(UID)
+        }
+
+        async function reqMultiUsrInfo(UidList) {
+            var requiredUIDs = []
+
+            UidList.forEach((uid) => {
+                if (!requiredUIDs.includes(uid)) {
+                    cached = false
+                    for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
+                        const cache = userInfoCache[cacheIndex];
+                        
+                        if (cache["UID"] == uid) {
+                            cached = true
+                            break
+                        }
+                    }
+
+                    if (!cached) {
+                        requiredUIDs.push(uid)
+                    }
+                }
+            })
+            
+            if (requiredUIDs.length > 0) {
+                usr = await request(JSON.stringify({"type": "reqUsersList", "users": requiredUIDs}))
+
+                usr["users"].forEach((userInfo) => {
+                    userInfoCache.push(userInfo)
+                })
+            }
+
+            finalUserinfoList = []
+
+            for (let index = 0; index < UidList.length; index++) {
+                const uid = UidList[index];
+                finalUserinfoList.push(await reqUsrInfo(uid))
+            }
+
+            return finalUserinfoList
+        }
+    </script>
+    <script>
+        // String comparison by aceakash (https://github.com/aceakash/string-similarity)
+        
+        function compareTwoStrings(first, second) {
+            first = first.replace(/\s+/g, '')
+            second = second.replace(/\s+/g, '')
+
+            if (first === second) return 1; // identical or empty
+            if (first.length < 2 || second.length < 2) return 0; // if either is a 0-letter or 1-letter string
+
+            let firstBigrams = new Map();
+            for (let i = 0; i < first.length - 1; i++) {
+                const bigram = first.substring(i, i + 2);
+                const count = firstBigrams.has(bigram)
+                    ? firstBigrams.get(bigram) + 1
+                    : 1;
+
+                firstBigrams.set(bigram, count);
+            };
+
+            let intersectionSize = 0;
+            for (let i = 0; i < second.length - 1; i++) {
+                const bigram = second.substring(i, i + 2);
+                const count = firstBigrams.has(bigram)
+                    ? firstBigrams.get(bigram)
+                    : 0;
+
+                if (count > 0) {
+                    firstBigrams.set(bigram, count - 1);
+                    intersectionSize++;
+                }
+            }
+
+            return (2.0 * intersectionSize) / (first.length + second.length - 2);
+        }
+    </script>
     <script>
         // Misc UI
         const friendsListWrapper = document.getElementById("friendsListWrapper")
@@ -821,11 +318,199 @@
         const currPronounsI = document.getElementById("currPronouns")
         const editCurrPronouns = document.getElementById("editPronouns")
 
+        const friendReqScreenBtn = document.getElementById("friendReqSBtn")
+        const friendReqScreen = document.getElementById("friendReqScreen")
+
+        const friendSearchbar = document.getElementById("friendSearchbar")
+        const friendSearchIcon = document.getElementById("friendSearchIcon")
+        
+        const friendSearchResult = document.getElementById("friendSearchResult")
+
+        const incomingList = document.getElementById("incomingList")
+        const outgoingList = document.getElementById("outgoingList")
+
         const msgRClickMenu = document.getElementById("msgRClickMenu")
         const cpyTxt = document.getElementById("msgCopyTxt")
         const rplyTxt = document.getElementById("msgReplyTxt")
         const editTxt = document.getElementById("msgEditTxt")
         const delTxt = document.getElementById("msgDeleteTxt")
+
+        var chats = []
+        var friends = []
+        var friendReqs = []
+        var searchResult = null
+
+        async function popSearchResults() {
+            if (searchResult == null) {
+                return
+            }
+
+            friendSearchResult.replaceChildren()
+
+            searchResult["results"].forEach((res) => {
+                let parent = document.createElement("div")
+                parent.style.width = "calc(100% - 2em)"
+                parent.style.height = "calc(100px - 2em)"
+                parent.style.display = "flex"
+                parent.style.flexDirection = "row"
+                parent.style.overflow = "hidden"
+                parent.style.padding = "1em"
+
+                let pfpWrapper = document.createElement("div")
+                pfpWrapper.style.height = "100%"
+                pfpWrapper.style.width = "fit-content"
+                
+                let pfpImg = document.createElement("img")
+                pfpImg.src = res["pfp"]
+                pfpImg.style.height = "100%"
+                pfpImg.style.borderRadius = "9999px"
+                pfpImg.style.border = "4px solid var(--acc4)"
+
+                let infoWrapper = document.createElement("div")
+                infoWrapper.style.width = "70%"
+                infoWrapper.style.height = "100%"
+                infoWrapper.style.marginLeft = "1em"
+                infoWrapper.style.display = "flex"
+                infoWrapper.style.flexDirection = "column"
+
+                let displayname = document.createElement("h1")
+                displayname.style.width = "100%"
+                displayname.style.height = "75%"
+                displayname.style.margin = "0"
+                displayname.style.padding = "0"
+                displayname.classList = "font white"
+                displayname.textContent = res["displayname"]
+
+                let extraInfo = document.createElement("p")
+                extraInfo.style.widows = "100%"
+                extraInfo.style.height = "25%"
+                extraInfo.style.margin = "0"
+                extraInfo.style.padding = "0"
+                extraInfo.classList = "font white"
+                extraInfo.textContent = res["username"] + " | ID: " + res["UID"]
+
+                let btn = document.createElement("button")
+                btn.style.width = "30%"
+                btn.style.height = "100%"
+                btn.style.border = "none"
+                btn.style.borderRadius = "0"
+                btn.style.margin = "auto none"
+                btn.style.fontSize = "1.5em"
+                btn.classList = "font"
+
+                let btnType = null
+
+                if (res["UID"] == currUID) {
+                    btn.textContent = "you"
+                    btn.disabled = true
+                } else if (friendReqs.find((v) => {return v["type"] == "incoming" && v["UID"] == res["UID"]})) {
+                    btn.textContent = "accept request"
+                    btn.style.backgroundColor = "var(--sendButtonGreen)"
+                    btn.style.cursor = "pointer"
+                    btnType = "accept"
+                } else if (friendReqs.find((v) => {return v["type"] == "outgoing" && v["UID"] == res["UID"]})) {
+                    btn.textContent = "cancel request"
+                    btn.style.backgroundColor = "var(--rose)"
+                    btn.style.cursor = "pointer"
+                    btnType = "cancel"
+                } else {
+                    btn.textContent = "send request"
+                    btn.style.backgroundColor = "var(--button)"
+                    btn.style.cursor = "pointer"
+                    btnType = "send"
+                }
+
+
+                btn.onclick = () => {
+                    if (btnType == "send") {
+                        request(JSON.stringify({"type": "friendReq", "UID": res["UID"]}))
+                    } else if (btnType == "cancel") {
+                        request(JSON.stringify({"type": "cancelFriendReq", "UID": res["UID"]}))
+                    }
+                }
+
+                pfpWrapper.appendChild(pfpImg)
+                parent.appendChild(pfpWrapper)
+
+                infoWrapper.appendChild(displayname)
+                infoWrapper.appendChild(extraInfo)
+                parent.appendChild(infoWrapper)
+                parent.appendChild(btn)
+                friendSearchResult.appendChild(parent)
+            })
+        }
+
+        async function searchForUsers(search) {
+            friendSearchResult.replaceChildren()
+
+            search = search.trim()
+
+            if (search == "") {
+                return
+            }
+
+            if (search.length < 3 || search.length > 30) {
+                let err = document.createElement("p")
+                err.classList = "font white"
+                err.style.textAlign = "center"
+                err.textContent = "Please input a valid username!"
+                friendSearchResult.appendChild(err)
+                return
+            }
+
+            let searching = document.createElement("p")
+            searching.classList = "font white"
+            searching.style.textAlign = "center"
+            searching.textContent = "Searching..."
+            friendSearchResult.appendChild(searching)
+
+            searchResult = await request(JSON.stringify({"type": "userSearch", "unameSearch": search}))
+
+            searching.remove()
+
+            if (searchResult["type"] == "userSearchFailed") {
+                let err = document.createElement("p")
+                err.classList = "font white"
+                err.style.textAlign = "center"
+                err.textContent = "We could not find that user!"
+                friendSearchResult.appendChild(err)
+                return
+            }
+
+            searchResult["results"].sort((a, b) => {
+                aSim = compareTwoStrings(a["username"], search)
+                bSim = compareTwoStrings(b["username"], search)
+                return bSim - aSim
+            })
+
+            await popSearchResults()
+        }
+
+        friendSearchIcon.onclick = () => {
+            searchForUsers(friendSearchbar.value)
+        }
+
+        friendSearchbar.addEventListener("blur", (e) => {
+            searchForUsers(friendSearchbar.value)
+        })
+
+        friendSearchbar.addEventListener("keydown", (e) => {
+            if (e.key == "Enter") {
+                e.preventDefault()
+                friendSearchbar.blur()
+            }
+        })
+
+        var friendReqScreenOpen = false
+        function toggleFriendReqScreen() {
+            if (friendReqScreenOpen) {
+                friendReqScreen.style.transform = "translateX(calc(100% + 8px))"
+            } else {
+                friendReqScreen.style.transform = "translateX(0%)"
+            }
+
+            friendReqScreenOpen = !friendReqScreenOpen
+        }
 
         var msgRClickMenuMsg = null
 
@@ -946,8 +631,83 @@
             request(JSON.stringify({"type": "logout"}))
         }
 
+        function setFriendReqs() {
+            incomingList.replaceChildren()
+            outgoingList.replaceChildren()
+
+            friendReqs.forEach((req) => {
+                let uid = req["UID"]
+                reqUsrInfo(uid).then((uInfo) => {
+                    let reqDiv = document.createElement("div")
+                    reqDiv.style.width = "100%"
+                    reqDiv.style.height = "60px"
+                    reqDiv.style.overflow = "hidden"
+                    reqDiv.style.display = "flex"
+                    reqDiv.style.flexDirection = "row"
+
+                    let pfpDiv = document.createElement("div")
+                    pfpDiv.style.width = "56px"
+                    pfpDiv.style.height = "56px"
+
+                    let pfpImg = document.createElement("img")
+                    pfpImg.style.width = "100%"
+                    pfpImg.style.height = "100%"
+                    pfpImg.style.borderRadius = "99999px"
+                    pfpImg.style.border = "2px solid var(--acc4)"
+                    pfpImg.src = uInfo["pfp"]
+
+                    let infoDiv = document.createElement("div")
+                    infoDiv.style.width = "50%"
+                    infoDiv.style.height = "100%"
+                    infoDiv.style.marginLeft = "1em"
+
+                    let displayname = document.createElement("h1")
+                    displayname.style.width = "100%"
+                    displayname.style.height = "75%"
+                    displayname.style.margin = "0"
+                    displayname.classList = "font white"
+                    displayname.textContent = uInfo["displayname"]
+
+                    let extraInfo = document.createElement("p")
+                    extraInfo.style.width = "100%"
+                    extraInfo.style.height = "25%"
+                    extraInfo.style.margin = "0"
+                    extraInfo.classList = "font white"
+                    extraInfo.textContent = uInfo["username"] + " | ID: " + uInfo["UID"]
+
+                    let actionDiv = document.createElement("div")
+                    actionDiv.style.width = "50%"
+                    actionDiv.style.height = "100%"
+                    
+                    
+                    pfpDiv.appendChild(pfpImg)
+
+                    infoDiv.appendChild(displayname)
+                    infoDiv.appendChild(extraInfo)
+
+                    
+
+                    reqDiv.appendChild(pfpDiv)
+                    reqDiv.appendChild(infoDiv)
+                    reqDiv.appendChild(actionDiv)
+
+                    if (req["type"] == "incoming") {
+                        incomingList.appendChild(reqDiv)
+                    } else {
+                        outgoingList.appendChild(reqDiv)
+                    }
+                })
+            })
+
+            popSearchResults()
+        }
+
         function popUserInfo(resp) {
             currUID = resp["UID"]
+
+            chats = resp["chats"]
+            friends = resp["friends"]
+            friendReqs = resp["friendReq"]
 
             currUsernameI.value = resp["username"]
             currDisplaynameI.value = resp["displayname"]
@@ -965,6 +725,8 @@
             accCreatedDate.textContent = new Date(resp["accCreated"] * 1000).toLocaleDateString()
 
             bioArea.value = resp["bio"]
+
+            setFriendReqs()
         }
 
         var editingDisplayname = false
@@ -1104,6 +866,8 @@
             const msgP = document.createElement("p")
             msgP.classList = "font white"
             msgP.style.margin = ".1em"
+            msgP.style.overflowWrap = "break-word"
+            msgP.style.wordWrap = "break-word"
 
             for (let line = 0; line < lines.length; line++) {
                 const lineContent = lines[line];
@@ -1124,7 +888,8 @@
                     wordE.textContent = word + (index + 1 < words.length ? " " : "")
                     wordE.style.display = "inline-block"
                     wordE.style.width = "max-content"
-                    wordE.style.wordWrap = "normal"
+                    wordE.style.overflowWrap = "break-word"
+                    wordE.style.wordWrap = "break-word"
                     wordE.style.margin = "0"
                     wordE.style.whiteSpace = "pre-wrap"
                     msgP.appendChild(wordE)
@@ -1136,7 +901,6 @@
                 }
             }
             
-
             return msgP
         }
 
@@ -1238,7 +1002,6 @@
             return messageDiv
         }
 
-        const userInfoCache = []
         var chatCache = null
         var chatFetchInProgress = false
         async function setChat(chat) {
@@ -1271,30 +1034,10 @@
 
             requiredUIDs = []
             chat["messages"].forEach(message => {
-                if (!requiredUIDs.includes(message["UID"])) {
-                    cached = false
-                    for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
-                        const cache = userInfoCache[cacheIndex];
-                        
-                        if (cache["UID"] == message["UID"]) {
-                            cached = true
-                            break
-                        }
-                    }
-
-                    if (!cached) {
-                        requiredUIDs.push(message["UID"])
-                    }
-                }
+                requiredUIDs.push(message["UID"])
             });
 
-            if (requiredUIDs.length > 0) {
-                userInfoList = await request(JSON.stringify({"type":"reqUsersList","users":requiredUIDs}))
-
-                userInfoList["users"].forEach((info) => {
-                    userInfoCache.push(info)
-                })
-            }
+            userInfos = await reqMultiUsrInfo(requiredUIDs)
 
             if (loading) {
                 loadingStatus += 1
@@ -1349,13 +1092,13 @@
 
                 if (lastMsg) {
                     if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60) {
-                        messageDiv = genSmallMsg(userInfoCache, message)
+                        messageDiv = genSmallMsg(userInfos, message)
 
                     } else {
-                        messageDiv = genFullMsg(userInfoCache, message)
+                        messageDiv = genFullMsg(userInfos, message)
                     }
                 } else {
-                    messageDiv = genFullMsg(userInfoCache, message)
+                    messageDiv = genFullMsg(userInfos, message)
                 }
 
                 messageDiv.addEventListener("contextmenu", (e) => {
@@ -1372,7 +1115,12 @@
 
                     msgRClickMenu.style.visibility = "visible"
                     msgRClickMenu.style.left = e.pageX + "px"
-                    msgRClickMenu.style.top = e.pageY + "px"
+
+                    if (e.pageY + msgRClickMenu.offsetHeight > window.innerHeight) {
+                        msgRClickMenu.style.top = e.pageY - msgRClickMenu.offsetHeight + "px"
+                    } else {
+                        msgRClickMenu.style.top = e.pageY + "px"
+                    }
                     msgRClickMenuMsg = message
                 })
 
@@ -1721,6 +1469,11 @@
                                             updateCachedDisplayname(respBody)
                                         }
 
+                                        if (respBody["type"] == "updateFriendReqs") {
+                                            friendReqs = respBody["friendReqs"]
+                                            setFriendReqs()
+                                        }
+
                                         if (respBody["type"] == "reqUserFailed") {
                                             fetchSelfData()
                                         }
@@ -1762,8 +1515,6 @@
                     }
                 })
             })
-
-            
     </script>
     <script>
         // Send msg

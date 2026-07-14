@@ -12,9 +12,14 @@ SAVE_KEY = CWD / "meta.key"
 
 username = input("Username: ")
 
-
 if not (USERS_DIR / f"{username}.usr").exists():
     print(f"Invalid user {username}")
+    sys.exit(1)
+
+confirm = input(f"Are you sure you want to delete {username}? (y/n): ")
+
+if confirm.lower() != "y":
+    print("Deletion cancelled!")
     sys.exit(1)
 
 key = None
@@ -27,9 +32,13 @@ fernet = Fernet(key)
 with open(USERS_DIR / f"{username}.usr", "rb+") as f:
     userData = msgpack.unpackb(fernet.decrypt(f.read()))
 
-    print(userData)
-    #userData["UID"] = 3
-    #print(userData)
+    UID = userData["UID"]
+
+    userData["Displayname"] = f"DELETED USER {UID}"
+    userData["Birthday"] = None
+    userData["BirthdayV"] = "PRIVATE"
+    userData["Pronouns"] = ""
+    userData["Bio"] = ""
 
     f.seek(0)
     f.write(fernet.encrypt(msgpack.packb(userData)))
@@ -37,4 +46,4 @@ with open(USERS_DIR / f"{username}.usr", "rb+") as f:
 
     f.close()
 
-print("User edited successfully!")
+print("User deleted successfully!")
