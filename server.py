@@ -1381,14 +1381,14 @@ async def wsHandler(ws: ServerConnection):
     finally:
         WS_CLIENTS.remove(ws)
 
-async def shutdownWs(shutdownEvent: asyncio.Event, future: Future):
+async def shutdownWs(shutdownEvent: asyncio.Event, future: Future, shutdownEventDone: asyncio.Event):
     shutdownEvent.set()
     
-    await asyncio.sleep(5)
+    await shutdownEventDone.wait()
 
     asyncio.get_running_loop().stop()
 
-async def wsListen(ipAddrs: list, context: ssl.SSLContext, shutdownEvent: asyncio.Event):
+async def wsListen(ipAddrs: list, context: ssl.SSLContext, shutdownEvent: asyncio.Event, shutdownEventDone: asyncio.Event):
     servers = []
 
     for addr in ipAddrs:
@@ -1400,15 +1400,15 @@ async def wsListen(ipAddrs: list, context: ssl.SSLContext, shutdownEvent: asynci
     logging.info("[WS] Websockets running")
     
     await asyncio.gather(*servers, shutdownEvent.wait())
-    
     logging.info("[WS] Websocket exited")
+    shutdownEventDone.set()
 
 def wsBootstrap(loop: asyncio.AbstractEventLoop):
     logging.info("[WS] Websocket Bootstrap")
     asyncio.set_event_loop(loop)
     loop.run_forever()
 
-async def autosave(shutdownEvent: asyncio.Event):
+async def autosave(shutdownEvent: asyncio.Event, shutdownEventDone: asyncio.Event):
     try:
         while True:
             try:
@@ -1424,12 +1424,13 @@ async def autosave(shutdownEvent: asyncio.Event):
         pass
 
     logging.info("[AS] Autosave thread exited")
+    shutdownEventDone.set()
 
-async def shutdownAutosave(shutdownEvent: asyncio.Event, future: Future):
+async def shutdownAutosave(shutdownEvent: asyncio.Event, future: Future, shutdownEventDone: asyncio.Event):
     logging.info("[AS] Stopping autosaves!")
     shutdownEvent.set()
 
-    await asyncio.sleep(5)
+    await shutdownEventDone.wait()
 
     asyncio.get_running_loop().stop()
 
@@ -1517,17 +1518,19 @@ if __name__ == "__main__":
 
     wsLoop = asyncio.new_event_loop()
     wsShutdownEvent = asyncio.Event()
+    wsShutdownEventDone = asyncio.Event()
     wsThread = threading.Thread(target=wsBootstrap, args=(wsLoop,), daemon=True)
     wsThread.start()
 
-    wsFuture = asyncio.run_coroutine_threadsafe(wsListen(ipAddrs, context, wsShutdownEvent), wsLoop)
+    wsFuture = asyncio.run_coroutine_threadsafe(wsListen(ipAddrs, context, wsShutdownEvent, wsShutdownEventDone), wsLoop)
 
     autosaveLoop = asyncio.new_event_loop()
     autosaveShutdownEvent = asyncio.Event()
+    autosaveShutdownEventDone = asyncio.Event()
     autosaveThread = threading.Thread(target=autosaveBootstrap, args=(autosaveLoop,), daemon=True)
     autosaveThread.start()
 
-    autosaveFuture = asyncio.run_coroutine_threadsafe(autosave(autosaveShutdownEvent), autosaveLoop)
+    autosaveFuture = asyncio.run_coroutine_threadsafe(autosave(autosaveShutdownEvent, autosaveShutdownEventDone), autosaveLoop)
 
     logging.debug("[MAIN] HTTP Primed and ready to go")
     logging.info("[MAIN] Connect via:")
@@ -1579,7 +1582,7 @@ if __name__ == "__main__":
                 break
     
     logging.info("[MAIN] Shutting down Websocket thread (10s)")
-    asyncio.run_coroutine_threadsafe(shutdownWs(wsShutdownEvent, wsFuture), loop=wsLoop)
+    asyncio.run_coroutine_threadsafe(shutdownWs(wsShutdownEvent, wsFuture, wsShutdownEventDone), loop=wsLoop)
     wsThread.join(10)
 
     if wsThread.is_alive():
@@ -1587,7 +1590,7 @@ if __name__ == "__main__":
         wsLoop.close()
 
     logging.info("[MAIN] Shutting down autosave thread (10s)")
-    asyncio.run_coroutine_threadsafe(shutdownAutosave(autosaveShutdownEvent, autosaveFuture), loop=autosaveLoop)
+    asyncio.run_coroutine_threadsafe(shutdownAutosave(autosaveShutdownEvent, autosaveFuture, autosaveShutdownEventDone), loop=autosaveLoop)
     autosaveThread.join(10)
 
     if autosaveThread.is_alive():
