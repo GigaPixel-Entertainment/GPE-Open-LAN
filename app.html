@@ -788,7 +788,13 @@
             popSearchResults()
         }
 
+        var settingChatList = false
         async function setChatList() {
+            if (settingChatList) {
+                return
+            }
+            settingChatList = true
+
             amLabel = document.createElement("p")
             amLabel.classList = "white font"
             amLabel.textContent = "active messages"
@@ -884,6 +890,8 @@
             friendsList2.forEach((e) => {
                 friendsList.appendChild(e)
             })
+
+            settingChatList = false
         }
 
         function popUserInfo(resp) {
@@ -1069,6 +1077,16 @@
                     console.log("Failed to get embed type")
                 }
 
+                filename = embed.slice(4)
+
+                try {
+                    splits = filename.split(".")
+
+                    if (splits.length == 3) {
+                        filename = atob(splits[splits.length - 2])
+                    }
+                } catch {}
+
                 if (embedType.startsWith("image/")) {
                     let img = document.createElement("img")
                     img.style.maxHeight = "9em"
@@ -1076,6 +1094,7 @@
                     img.style.border = "none"
                     img.style.borderRadius = "8px"
                     img.style.cursor = "pointer"
+                    img.title = filename
 
                     img.style.marginRight = "1em"
                     img.style.marginBottom = "1em"
@@ -1110,6 +1129,7 @@
                     audio.style.border = "none"
                     audio.style.borderRadius = "8px"
                     audio.controls = "true"
+                    audio.title = filename
                     audio.src = embed
 
                     audio.style.marginRight = "1em"
@@ -1124,6 +1144,7 @@
                     video.style.marginRight = "1em"
                     video.style.marginBottom = "1em"
                     video.controls = "true"
+                    video.title = filename
                     video.src = embed
                     
                     embeds.appendChild(video)
@@ -1140,9 +1161,9 @@
                     title.style.height = "1em"
                     title.style.fontSize = "1.25em"
                     title.href = embed
-                    title.download = embed
+                    title.download = filename
                     title.classList = "font white"
-                    title.textContent = embed.slice(4)
+                    title.textContent = filename
                     
                     generic.appendChild(title)
                     embeds.appendChild(generic)
@@ -1304,6 +1325,100 @@
         var currPage = 0
         var maxPage = 0
 
+        async function newMsg(message, chatDiv2, lastMsg, userInfos) {
+            if (message["deleted"]) {
+                return
+            }
+
+            if (lastMsg && message["time"] && lastMsg["time"]) {
+                currDate = new Date(message["time"] * 1000).toLocaleDateString("en-US", {year: "numeric", month:"long", day:"numeric"})
+                lastDate = new Date(lastMsg["time"] * 1000).toLocaleDateString("en-US", {year: "numeric", month:"long", day:"numeric"})
+
+                if (currDate != lastDate) {
+                    const seperatorWrapper = document.createElement("div")
+                    seperatorWrapper.style.width = "95%"
+                    seperatorWrapper.style.margin = "0 auto"
+
+                    const seperator = document.createElement("hr")
+                    seperator.style.position = "absolute"
+                    seperator.style.width = "95%"
+                    seperator.style.border = "none"
+                    seperator.style.height = "4px"
+                    seperator.style.borderRadius = "99999px"
+                    seperator.style.backgroundColor = "var(--acc4)"
+                    seperatorWrapper.appendChild(seperator)
+
+                    const date = document.createElement("p")
+                    date.textContent = currDate
+                    date.classList = "font white"
+                    date.style.backgroundColor = "var(--bg)"
+                    date.style.position = "relative"
+                    date.style.left = "50%"
+                    date.style.width = "fit-content"
+                    date.style.transform = "translateX(-50%)"
+                    date.style.paddingLeft = "1em"
+                    date.style.paddingRight = "1em"
+                    seperatorWrapper.appendChild(date)
+
+                    chatDiv2.push(seperatorWrapper)
+                }
+            }
+
+            var messageDiv = null
+
+            if (lastMsg) {
+                if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60) {
+                    messageDiv = await genSmallMsg(userInfos, message)
+
+                } else {
+                    messageDiv = await genFullMsg(userInfos, message)
+                }
+            } else {
+                messageDiv = await genFullMsg(userInfos, message)
+            }
+
+            messageDiv.title = "MSGID" + message["MSGID"]
+
+            messageDiv.addEventListener("contextmenu", (e) => {
+                e.preventDefault()
+
+                if (message["UID"] == currUID) {
+                    editTxt.disabled = false
+                    delTxt.disabled = false
+                } else {
+                    editTxt.disabled = true
+                    delTxt.disabled = true
+
+                }
+
+                msgRClickMenu.style.visibility = "visible"
+                msgRClickMenu.style.left = e.pageX + "px"
+
+                if (e.pageY + msgRClickMenu.offsetHeight > window.innerHeight) {
+                    msgRClickMenu.style.top = e.pageY - msgRClickMenu.offsetHeight + "px"
+                } else {
+                    msgRClickMenu.style.top = e.pageY + "px"
+                }
+                msgRClickMenuMsg = message
+            })
+
+            chatDiv2.push(messageDiv)
+        }
+
+        function attemptScroll(atBottom, startAtTop, currScroll) {
+            if (atBottom) {
+                chatDiv.scrollTop = chatDiv.scrollHeight
+            } else if (startAtTop) {
+                chatDiv.scrollTop = 0
+            } else {
+                chatDiv.scrollTop = currScroll
+            }
+
+            if (currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) {
+                chatDiv.scrollTop = chatDiv.scrollHeight
+            }
+        }
+
         async function setChat(chat) {
             if (chat["CID"] != currChat) {
                 return
@@ -1344,7 +1459,10 @@
 
             const chatDiv2 = []
 
-            lastMsg = null
+            let padding = document.createElement("div")
+            padding.style.width = "100%"
+            padding.style.height = "2.5em"
+            chatDiv2.push(padding)
 
             if (currPage < maxPage) {
                 let goUpBtn = document.createElement("button")
@@ -1365,85 +1483,11 @@
                 chatDiv2.push(goUpBtn)
             }
 
-            
+            let lastMsg = null
             for (let index = 0; index < chat["messages"].length; index++) {
                 const message = chat["messages"][index];
 
-                if (message["deleted"]) {
-                    continue
-                }
-
-                if (lastMsg && message["time"] && lastMsg["time"]) {
-                    currDate = new Date(message["time"] * 1000).toLocaleDateString("en-US", {year: "numeric", month:"long", day:"numeric"})
-                    lastDate = new Date(lastMsg["time"] * 1000).toLocaleDateString("en-US", {year: "numeric", month:"long", day:"numeric"})
-
-                    if (currDate != lastDate) {
-                        const seperatorWrapper = document.createElement("div")
-                        seperatorWrapper.style.width = "95%"
-                        seperatorWrapper.style.margin = "0 auto"
-
-                        const seperator = document.createElement("hr")
-                        seperator.style.position = "absolute"
-                        seperator.style.width = "95%"
-                        seperator.style.border = "none"
-                        seperator.style.height = "4px"
-                        seperator.style.borderRadius = "99999px"
-                        seperator.style.backgroundColor = "var(--acc4)"
-                        seperatorWrapper.appendChild(seperator)
-
-                        const date = document.createElement("p")
-                        date.textContent = currDate
-                        date.classList = "font white"
-                        date.style.backgroundColor = "var(--bg)"
-                        date.style.position = "relative"
-                        date.style.left = "50%"
-                        date.style.width = "fit-content"
-                        date.style.transform = "translateX(-50%)"
-                        date.style.paddingLeft = "1em"
-                        date.style.paddingRight = "1em"
-                        seperatorWrapper.appendChild(date)
-
-                        chatDiv2.push(seperatorWrapper)
-                    }
-                }
-
-                var messageDiv = null
-
-                if (lastMsg) {
-                    if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60) {
-                        messageDiv = await genSmallMsg(userInfos, message)
-
-                    } else {
-                        messageDiv = await genFullMsg(userInfos, message)
-                    }
-                } else {
-                    messageDiv = await genFullMsg(userInfos, message)
-                }
-
-                messageDiv.addEventListener("contextmenu", (e) => {
-                    e.preventDefault()
-
-                    if (message["UID"] == currUID) {
-                        editTxt.disabled = false
-                        delTxt.disabled = false
-                    } else {
-                        editTxt.disabled = true
-                        delTxt.disabled = true
-
-                    }
-
-                    msgRClickMenu.style.visibility = "visible"
-                    msgRClickMenu.style.left = e.pageX + "px"
-
-                    if (e.pageY + msgRClickMenu.offsetHeight > window.innerHeight) {
-                        msgRClickMenu.style.top = e.pageY - msgRClickMenu.offsetHeight + "px"
-                    } else {
-                        msgRClickMenu.style.top = e.pageY + "px"
-                    }
-                    msgRClickMenuMsg = message
-                })
-
-                chatDiv2.push(messageDiv)
+                await newMsg(message, chatDiv2, lastMsg, userInfos)
                 lastMsg = message
             }
 
@@ -1466,7 +1510,7 @@
                 chatDiv2.push(goDownBtn)
             }
 
-            const padding = document.createElement("div")
+            padding = document.createElement("div")
             padding.style.width = "100%"
             padding.style.height = "5em"
             chatDiv2.push(padding)
@@ -1477,17 +1521,7 @@
                 chatDiv.appendChild(e)
             })
 
-            if (atBottom) {
-                chatDiv.scrollTop = chatDiv.scrollHeight
-            } else if (startAtTop) {
-                chatDiv.scrollTop = 0
-            } else {
-                chatDiv.scrollTop = currScroll
-            }
-
-            if (currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) {
-                chatDiv.scrollTop = chatDiv.scrollHeight
-            }
+            attemptScroll(atBottom, startAtTop, currScroll)
 
             startAtTop = false
             chatFetchInProgress = false
@@ -1815,25 +1849,47 @@
 
                                         if (respBody["type"] == "newMsg") {
                                             if (currChat == respBody["CID"]) {
-                                                chatCache["messages"].push(respBody["message"])
-
-                                                if (chatCache["messages"].length > 100) {
-                                                    let oldestMsg = 0
-                                                    let oldestMsgTime = 99999999999999
-
-                                                    for (let index = 0; index < chatCache["messages"].length; index++) {
-                                                        const msg = chatCache["messages"][index];
-                                                        
-                                                        if (msg["time"] < oldestMsgTime) {
-                                                            oldestMsgTime = msg["time"]
-                                                            oldestMsg = index
-                                                        }
-                                                    }
-
-                                                    chatCache["messages"].splice(oldestMsg, 1)
+                                                if (currPage == 0) {
+                                                    chatCache["messages"].push(respBody["message"])
+                                                } else {
+                                                    // OHHHH NOOOOO WHY DID I MAKE MESSAGE PAGING LIKE THIS THIS IS AWFUL
+                                                    // TODO: Push next message onto this screen
+                                                    // I guess refetch messages? IDK
+                                                    fetchChatData(currChat)
+                                                    return
                                                 }
 
-                                                setChat(chatCache)
+                                                if (chatCache["messages"].length > 100) {
+                                                    let msgid = chatCache["messages"][0]["MSGID"]
+                                                    chatCache["messages"].splice(0, 1)
+
+                                                    let msgDiv = document.querySelector('[title="MSGID' + msgid + '"]')
+
+                                                    if (msgDiv) {
+                                                        msgDiv.remove()
+                                                    }
+                                                }
+
+                                                requiredUIDs = []
+                                                chatCache["messages"].forEach(message => {
+                                                    requiredUIDs.push(message["UID"])
+                                                });
+
+                                                userInfos = reqMultiUsrInfo(requiredUIDs).then((userInfos) => {
+                                                    let lastMsg = chatCache["messages"][chatCache["messages"].length - 2]
+                                                    let thisMsg = chatCache["messages"][chatCache["messages"].length - 1]
+                                                    let msgList = []
+
+                                                    const currScroll = chatDiv.scrollTop
+                                                    const atBottom = ((currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) || changedChat) && !startAtTop
+
+                                                    newMsg(thisMsg, msgList, lastMsg, userInfos).then(() => {
+                                                        let lastMsgE = document.querySelector('[title="MSGID' + lastMsg["MSGID"] + '"]')
+                                                        lastMsgE.after(msgList[0])
+
+                                                        attemptScroll(atBottom, startAtTop, currScroll)
+                                                    })
+                                                })
                                             }
                                         }
 
@@ -1917,7 +1973,7 @@
 
             for (let index = 0; index < embeddedFiles.length; index++) {
                 const file = embeddedFiles[index];
-                encodedFiles.push({"contents": await convertFileToBase64(file), "type": file.type})
+                encodedFiles.push({"contents": await convertFileToBase64(file), "type": file.type, "filename": file.name})
             }
 
             embeddedFiles = []

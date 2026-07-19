@@ -31,47 +31,11 @@ This is free software, and you are welcome to redistribute it
 under certain conditions; See <https://www.gnu.org/licenses/>.
 """)
 
-print("""
-REQUIRED IMPORTS:
-(use pip to install)
-cryptography
-websockets
-http
-concurrent
-collections
-io
-pillow
-mimetypes
-zstandard
-traceback
-threading
-datetime
-logging
-secrets
-pathlib
-msgpack
-asyncio
-orjson
-brotli
-bcrypt
-psutil
-socket
-select
-base64
-gzip
-time
-copy
-math
-sys
-ssl
-""")
-
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from websockets.asyncio.server import serve, ServerConnection, Request
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidTag
-from http.server import BaseHTTPRequestHandler
 from concurrent.futures._base import Future
 from cryptography.fernet import Fernet
 from collections.abc import Iterable
@@ -79,7 +43,6 @@ from http import cookies
 from io import BytesIO
 from PIL import Image
 import mimetypes
-import zstandard
 import traceback
 import threading
 import datetime
@@ -89,58 +52,19 @@ import pathlib
 import msgpack
 import asyncio
 import orjson
-import brotli
 import bcrypt
 import psutil # type: ignore
 import socket
 import select
 import base64
-import gzip
 import time
 import copy
 import math
 import sys
 import ssl
 
-PORT = 33333
-WS_PORT = 33334
-WSS_PORT = 33335
-SOCKET_BACKLOG_NUM = 5
-MAX_RETRY_ATTEMPTS = 10
-RETRY_ATTEMPTS_CLEAR_AFTER_SEC = 120
-AUTOSAVE_INTERVAL_SEC = 300
-ACC_CREATION_COOLDOWN_SEC = 30*60
-NUM_ENCRYPT_ROUNDS = 15
-LOG_LEVEL = logging.DEBUG
-
-ZSTD_COMPRESSION_LEVEL = 9 # -inf - 22
-BROTLI_COMPRESSION_LEVEL = 11 # 0 - 11
-GZIP_COMPRESSION_LEVEL = 3 # 0 - 9
-
-TOKEN_EXPIRES_SEC = 60*60*24 # 1 Day
-REDIRECT_TOKEN_EXPIRES_SEC = 60 # 1 Minute
-
-CWD = pathlib.Path(__file__).resolve().parent
-CA_CERT_DIR = CWD / "CA_CERT"
-CDN_DIR = CWD / "cdn/"
-CHATS_DIR = CWD / "Chats/"
-SAVE_KEY = CWD / "meta.key"
-CSS_DIR = CWD / "CSS/"
-JS_DIR = CWD / "JS/"
-LOG_DIR = CWD / "logs/"
-MEDIA_DIR = CWD / "Media/"
-PFP_DIR = CWD / "pfps/"
-SECURITY_DIR = CWD / "security"
-USERS_DIR = CWD / "Users/"
-
-PRIVATE_DIRS = [
-    USERS_DIR,
-    CHATS_DIR,
-    CA_CERT_DIR,
-    SECURITY_DIR,
-    SAVE_KEY,
-    LOG_DIR
-]
+from config import *
+import httphelper
 
 WS_CLIENTS: set[ServerConnection] = set()
 VALID_TOKENS = {}
@@ -150,17 +74,7 @@ RATELIMITED_IPS = []
 
 DEFAULT_PFPS: list[str] = []
 
-class HTTPRequestParser(BaseHTTPRequestHandler):
-    def __init__(self, request_bytes: bytes):
-        self.rfile = BytesIO(request_bytes)
-        self.raw_requestline = self.rfile.readline()
-        self.error_code = self.error_message = None
-        
-        self.parse_request()
 
-    def send_error(self, code: int, message: str | None=None, explain: str | None=None):
-        self.error_code = code
-        self.error_message = message
 
 def genSaveKey():
     key = Fernet.generate_key()
@@ -401,68 +315,9 @@ def getIpAddrs():
                 
     return ip_list
 
-def formatHEADResponse(filePath: pathlib.Path):
-    if not filePath.is_file():
-        logging.warning(f"[MAIN] Invalid fetch {filePath}!")
-
-        return formatErrorResponse(404)
-    
-    mime = mimetypes.guess_file_type(filePath)[0] or "application/octet-stream"
-
-    return (
-        "HTTP/1.1 200 OK\r\n"
-        f"Content-Type: {mime}\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-    ).encode("utf-8")
-
-def formatHttpResponse(filePath: pathlib.Path, acceptEncoding: list):
-    if not filePath.is_file():
-        logging.warning(f"[MAIN] Invalid fetch {filePath}!")
-
-        return formatErrorResponse(404)
-    
-    fileContents = bytes()
-    with open(filePath, "rb") as f:
-        fileContents = f.read()
-        f.close()
-    
-    if CDN_DIR.resolve() in filePath.resolve().parents:
-        fileContents = fernet.decrypt(fileContents)
-    
-    mime = mimetypes.guess_file_type(filePath)[0] or "application/octet-stream"
-
-    encoding = None
-
-    if "text/" in mime:
-        if "zstd" in acceptEncoding:
-            encoding = "zstd"
-        elif "br" in acceptEncoding:
-            encoding = "br"
-        elif "gzip" in acceptEncoding:
-            encoding = "gzip"
-
-        if encoding == "zstd":
-            fileContents = zstandard.compress(fileContents, level=ZSTD_COMPRESSION_LEVEL)
-        elif encoding == "br":
-            fileContents = brotli.compress(fileContents, quality=BROTLI_COMPRESSION_LEVEL)
-        elif encoding == "gzip":
-            fileContents = gzip.compress(fileContents, compresslevel=GZIP_COMPRESSION_LEVEL)
-    
-    header = (f"Content-Encoding: {encoding}\r\n" if encoding != None else "")
-
-    return (
-        "HTTP/1.1 200 OK\r\n"
-        f"Content-Type: {mime}\r\n"
-        f"Content-Length: {len(fileContents)}\r\n"
-        f"{header}"
-        "Connection: close\r\n"
-        "\r\n"
-    ).encode("utf-8") + fileContents
-
 def formatLoginResponse(username: str, cloudflare: bool):
     if not username:
-        return formatErrorResponse(500)
+        return httphelper.formatErrorResponse(500)
 
     token = secrets.token_urlsafe(256)
     VALID_TOKENS[username] = {"TOKEN": token, "EXPIRES": time.time() + TOKEN_EXPIRES_SEC}
@@ -474,18 +329,6 @@ def formatLoginResponse(username: str, cloudflare: bool):
         "\r\n"
     ).encode("utf-8")
 
-def formatErrorResponse(statusCode: int):
-    if statusCode == 400:
-        return "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n".encode("utf-8")
-    elif statusCode == 401:
-        return "HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n".encode("utf-8")
-    elif statusCode == 404:
-        return "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n".encode("utf-8")
-    elif statusCode == 500:
-        return "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n".encode("utf-8")
-    
-    return "HTTP/1.1 418 I'm a teapot\r\nConnection: close\r\n\r\n".encode("utf-8")
-
 def closeSocket(sk: socket.socket):
     try:
         sk.shutdown(socket.SHUT_WR)
@@ -493,19 +336,9 @@ def closeSocket(sk: socket.socket):
     except:
         pass
 
-def isSafePath(path: pathlib.Path):
-    reqPath = path.resolve()
-
-    for privDir in PRIVATE_DIRS:
-        if privDir.resolve() in reqPath.parents or privDir.resolve() == reqPath:
-            return False
-
-    if CWD.resolve() in reqPath.parents:
-        return True
-
 def handleRequest(sk: socket.socket):
     request = sk.recv(4096)
-    parsed = HTTPRequestParser(request)
+    parsed = httphelper.HTTPRequestParser(request)
 
     if parsed.error_code:
         logging.error(f"[MAIN] Failed to parse {request.decode("utf-8")}")
@@ -553,20 +386,20 @@ def handleRequest(sk: socket.socket):
 
                 if username != None:
                     sk.sendall(formatLoginResponse(username, "gigapixel.cc" in uri["hostname"]))
-        elif isSafePath(pagePath):
-            sk.sendall(formatHttpResponse(pagePath, acceptEncoding))
+        elif httphelper.isSafePath(pagePath):
+            sk.sendall(httphelper.formatHttpResponse(pagePath, acceptEncoding, fernet))
         else:
-            sk.sendall(formatErrorResponse(400))
+            sk.sendall(httphelper.formatErrorResponse(404))
     elif method == "HEAD":
         if page == "/":
             page = "/index.html"
         
         pagePath = CWD / page.removeprefix("/")
 
-        if isSafePath(pagePath):
-            sk.sendall(formatHEADResponse(pagePath))
+        if httphelper.isSafePath(pagePath):
+            sk.sendall(httphelper.formatHEADResponse(pagePath, acceptEncoding))
         else:
-            sk.sendall(formatErrorResponse(400))
+            sk.sendall(httphelper.formatErrorResponse(statusCode=404))
 
     closeSocket(sk)
 
@@ -922,11 +755,17 @@ async def wsHandler(ws: ServerConnection):
                         embedFilePaths = []
                         for embed in decryptedBody["embed"]:
                             embedC = embed["contents"]
+                            embedName: str = embed["filename"].strip()
+
+                            if len(embedName) <= 0 or len(embedName) > 128:
+                                embedName = secrets.token_urlsafe(32)
+
                             if "," in embed["contents"]:
                                 embedC = embed["contents"].split(",")[1]
                             
                             embedBytes = base64.b64decode(embedC)
                             uuid = ""
+                            fNameSafe = base64.urlsafe_b64encode(embedName.encode("utf-8")).decode("utf-8")
                             fileType = mimetypes.guess_extension(embed["type"])
 
                             if fileType == None:
@@ -935,16 +774,16 @@ async def wsHandler(ws: ServerConnection):
                             while True:
                                 uuid = secrets.token_urlsafe(48)
 
-                                if (CDN_DIR / f"{uuid}{fileType}").exists():
+                                if (CDN_DIR / f"{uuid}.{fNameSafe}{fileType}").exists():
                                     continue
 
-                                with open(CDN_DIR / f"{uuid}{fileType}", "wb") as f:
+                                with open(CDN_DIR / f"{uuid}.{fNameSafe}{fileType}", "wb") as f:
                                     f.write(fernet.encrypt(embedBytes))
                                     f.close()
                                 
                                 break
                             
-                            embedFilePaths.append(str((CDN_DIR / f"{uuid}{fileType}").resolve().relative_to(CWD)))
+                            embedFilePaths.append(str((CDN_DIR / f"{uuid}.{fNameSafe}{fileType}").resolve().relative_to(CWD)))
                         
                         chat = getChatFromCID(decryptedBody["CID"])
 
@@ -1383,6 +1222,13 @@ async def wsHandler(ws: ServerConnection):
 
 async def shutdownWs(shutdownEvent: asyncio.Event, future: Future, shutdownEventDone: asyncio.Event):
     shutdownEvent.set()
+
+    for ws in copy.copy(WS_CLIENTS):
+        try:
+            await asyncio.wait_for(ws.close(), 5)
+            WS_CLIENTS.remove(ws)
+        except Exception:
+            pass
     
     await shutdownEventDone.wait()
 

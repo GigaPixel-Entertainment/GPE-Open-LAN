@@ -2,7 +2,6 @@ cryptography
 websockets
 pillow
 zstandard
-logging
 pathlib
 msgpack
 asyncio
