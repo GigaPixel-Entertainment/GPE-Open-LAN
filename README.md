@@ -14,7 +14,7 @@ Before using Open-LAN, ensure you are connected to your home's/organization's in
 
 To use Open-LAN, type in your network IP address, and log in to your account to begin messaging.
 
-2. Simply type https://www.openlan.gigapixel.cc for the public web version of Open-LAN
+2. Simply type https://openlan.gigapixel.cc for the public web version of Open-LAN
 
 # More Stuff
 ____________
