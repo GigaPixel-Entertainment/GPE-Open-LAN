@@ -17,6 +17,10 @@
             <p class="font white" id="ChatName">You are chatting with: The Void</p>
             <button class="font white" onclick="showMyProfileScreen()">my profile ↓</button>
         </div>
+        <div id="lookingAtOldMsgs">
+            <p class="font white">You are looking at older messages</p>
+            <button class="font" onclick="jumpToBottom()">Jump to bottom</button>
+        </div>
         <div id="msgBox" class="scroll">
 
         </div>
@@ -154,6 +158,14 @@
         <div id="imageOverlay" onclick="imageOverlay.style.visibility = 'hidden'">
             <img id="imageOverlayImg" onload="imageOverlay.style.visibility = 'visible'">
         </div>
+
+        <div id="genericPopup">
+            <div id="popupContents">
+                <h1 id="popupTitle" class="font white">POPUP TITLE</h1>
+                <p id="popupContent" class="font white"> POPUP TEXT AND STUFF</p>
+                <button id="popupClose" onclick="closePopup()" class="font">Close</button>
+            </div>
+        </div>
         
         <div id="loadingOverlay">
             <img src="Media/Logo.png">
@@ -268,6 +280,48 @@
         }
     </script>
     <script>
+        // Popups
+
+        const genericPopup = document.getElementById("genericPopup")
+        const popupTitle = document.getElementById("popupTitle")
+        const popupContent = document.getElementById("popupContent")
+
+        var popupOpen = false
+
+        async function openPopup(title, content) {
+            if (popupOpen) {
+                await new Promise((r, _) => {
+                    function checkPopupOpen() {
+                        if (!popupOpen) {
+                            r()
+                        } else {
+                            setTimeout(checkPopupOpen, 100)
+                        }
+                    }
+
+                    checkPopupOpen()
+                })
+            }
+
+            popupOpen = true
+
+            popupTitle.textContent = title
+            popupContent.textContent = content
+
+            genericPopup.style.visibility = "visible"
+            genericPopup.style.opacity = "1"
+        }
+
+        function closePopup() {
+            genericPopup.style.opacity = "0"
+
+            setTimeout(() => {
+                genericPopup.style.visibility = "hidden"
+                popupOpen = false
+            }, 250)
+        }
+    </script>
+    <script>
         // Misc UI
         window.scrollTo(0, 0)
 
@@ -310,6 +364,8 @@
 
             myProfileScreenShown = !myProfileScreenShown
         }
+
+        const lookingAtOldMsgs = document.getElementById("lookingAtOldMsgs")
 
         const currPFP = document.getElementById("currPFP")
         const currPFPFile = document.getElementById("currPFPFile")
@@ -653,7 +709,7 @@
 
             setTimeout(() => {
                 pfpScalingWrapper.style.visibility = "hidden"
-            }, 500);
+            }, 250);
         }
 
         pfpSet.onclick = () => {
@@ -661,7 +717,7 @@
 
             setTimeout(() => {
                 pfpScalingWrapper.style.visibility = "hidden"
-            }, 500);
+            }, 250);
 
             if (selected) {
                 currPFP.src = selected
@@ -1096,6 +1152,20 @@
             return (await request(JSON.stringify({"type": "reqMsg", "CID": currChat, "MSGID": msgid})))["msg"]
         }
 
+        async function getUsernameInChat(username) {
+            const recipientsInfo = await reqMultiUsrInfo(chatCache["Recipients"])
+
+            for (let i = 0; i < recipientsInfo.length; i++) {
+                const recipient = recipientsInfo[i];
+                
+                if (recipient["username"] == username) {
+                    return recipient
+                }
+            }
+
+            return null
+        }
+
         async function evalEmbeds(message, msgP) {
             const embeds = document.createElement("div")
             embeds.style.width = "100%"
@@ -1268,6 +1338,7 @@
                     } else {
                         wordE = document.createElement("p")
                     }
+
                     wordE.textContent = word + (index + 1 < words.length ? " " : "")
                     wordE.style.display = "inline-block"
                     wordE.style.width = "max-content"
@@ -1275,6 +1346,23 @@
                     wordE.style.wordWrap = "break-word"
                     wordE.style.margin = "0"
                     wordE.style.whiteSpace = "pre-wrap"
+
+                    if (word.startsWith("@")) {
+                        let usrInfo = await getUsernameInChat(word.split("@")[1])
+
+                        if (usrInfo) {
+                            wordE.style.backgroundColor = "var(--highlight)"
+                            wordE.style.borderRadius = "8px"
+                            wordE.style.paddingLeft = "0.5em"
+                            wordE.style.paddingRight = "0.5em"
+                            wordE.textContent = "@" + usrInfo["displayname"]
+
+                            if (usrInfo["UID"] == currUID) {
+                                msgP.dataset.highlighted = true
+                            }
+                        }
+                    }
+
                     msgP.appendChild(wordE)
                 }
 
@@ -1384,10 +1472,10 @@
                 })
 
                 if (replyUsr["UID"] == currUID) {
-                    messageDiv.style.backgroundColor = "var(--highlight-transparent)"
-                    messageDiv.style.borderLeft = "2px solid var(--highlight)"
+                    messageDiv.dataset.highlighted = true
                 }
             }
+
 
             const imgArea = document.createElement("div")
             imgArea.style.width = "2.5%"
@@ -1424,6 +1512,11 @@
             }
 
             const msgP = await genMsg(message)
+
+            if (messageDiv.dataset.highlighted || msgP.dataset.highlighted) {
+                messageDiv.style.backgroundColor = "var(--highlighted-transparent)"
+                messageDiv.style.borderLeft = "2px solid var(--highlighted)"
+            }
 
             imgArea.append(pfpImg)
             textarea.appendChild(username)
@@ -1470,6 +1563,11 @@
             textarea.style.background = "none"
 
             const msgP = await genMsg(message)
+
+            if (messageDiv.dataset.highlighted || msgP.dataset.highlighted) {
+                messageDiv.style.backgroundColor = "var(--highlighted-transparent)"
+                messageDiv.style.borderLeft = "2px solid var(--highlighted)"
+            }
 
             textarea.append(msgP)
             messageDiv.append(padArea)
@@ -1575,10 +1673,10 @@
                 chatDiv.scrollTop = 0
             } else {
                 chatDiv.scrollTop = currScroll
-            }
 
-            if (currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) {
-                chatDiv.scrollTop = chatDiv.scrollHeight
+                if (currScroll + chatDiv.offsetHeight >= chatDiv.scrollHeight - 8) {
+                    chatDiv.scrollTop = chatDiv.scrollHeight
+                }
             }
         }
 
@@ -1685,7 +1783,13 @@
                     fetchChatData()
                 }
 
+                lookingAtOldMsgs.style.visibility = "visible"
+
                 chatDiv2.push(goDownBtn)
+            }
+
+            if (currPage == 0) {
+                lookingAtOldMsgs.style.visibility = "hidden"
             }
 
             padding = document.createElement("div")
@@ -1707,6 +1811,12 @@
             if (loading) {
                 loadingStatus += 1
             }
+        }
+
+        function jumpToBottom() {
+            currPage = 0
+            changedChat = true
+            fetchChatData()
         }
 
         function updateCachedDisplayname(resp) {
@@ -2260,7 +2370,7 @@
         async function uploadFiles(files) {
             if (files && files.length > 0) {
                 if (files.length > 10) {
-                    // Too many files
+                    openPopup("Woah there!", "Please upload up to 10 files at a time!")
                     return
                 }
 
@@ -2268,7 +2378,7 @@
                     const file = files[index];
                     
                     if (file.size > (25*1024*1024)) {
-                        // File too large
+                        openPopup("Woah there!", "That file exceeded the max size of 25MB!")
                         continue
                     }
 

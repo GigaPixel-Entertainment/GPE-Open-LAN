@@ -14,6 +14,8 @@
     --highlight: #6ea6db;
     --sendButtonGreen: #92c37c;
     --rose: #e99898;
+    --highlighted: #f9e1af;
+    --highlighted-transparent: #f9e1af30;
 }
 
 html, body {
@@ -73,6 +75,39 @@ footer > a {
     background-color: var(--acc3);
     cursor: pointer;
     font-size: 1.25em;
+}
+
+#lookingAtOldMsgs {
+    position: absolute;
+    width: 95%;
+    top: 3.75em;
+    right: 0;
+    background-color: var(--acc5);
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
+    height: 2em;
+    justify-content: space-between;
+    visibility: hidden;
+}
+
+#lookingAtOldMsgs > p {
+    padding: 0;
+    margin: 0;
+    font-size: 1.25em;
+    line-height: 1.6em;
+    padding-left: 1em;
+}
+
+#lookingAtOldMsgs > button {
+    background-color: var(--button);
+    border: none;
+    cursor: pointer;
+    margin: .25em;
+}
+
+#lookingAtOldMsgs > button:hover {
+    background-color: var(--button-press);
 }
 
 #msgBox {
@@ -207,6 +242,56 @@ footer > a {
     visibility: hidden;
 }
 
+#replying {
+    position: absolute;
+    width: 100%;
+    height: 2.5vh;
+    background-color: var(--acc);
+    top: 0;
+    transform: translateY(-100%);
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    visibility: hidden;
+}
+
+#replying > img {
+    height: 100%;
+    border-radius: 9999px;
+}
+
+#replying > h1, #replying > p, #replying > button {
+    font-size: 1em;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+}
+
+#replying > p {
+    margin-left: 1em;
+    margin-right: 1em;
+    background: linear-gradient(to right, var(--text) 0%, var(--text) 80%, transparent 100%);
+    background-clip: text;
+    color: transparent;
+    width: 100%;
+}
+
+#replying > button {
+    position: absolute;
+    right: 0;
+    aspect-ratio: 1;
+    height: 100%;
+    color: gray;
+    background-color: var(--button);
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+}
+
+#replying > button:hover {
+    background-color: var(--button-press);
+}
+
 .smallTime {
     position: absolute;
     width: 100%;
@@ -231,6 +316,8 @@ footer > a {
     box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, .5);
     transform: translateX(calc(100% + 8px));
     transition: transform 500ms ease-in-out;
+
+    z-index: 2;
 }
 
 #toggleFriendsList {
@@ -425,7 +512,7 @@ footer > a {
     z-index: 3;
     opacity: 0;
 
-    transition: opacity 0.5s linear;
+    transition: opacity 0.25s linear;
 }
 
 #pfpScaling {
@@ -738,6 +825,57 @@ footer > a {
     transform: translate(-50%, -50%);
 }
 
+#genericPopup {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    visibility: hidden;
+    opacity: 0;
+
+    transition: opacity 250ms linear;
+}
+
+#popupContents {
+    position: absolute;
+    width: calc(50% - 2em);
+    height: calc(50% - 2em);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg);
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#popupTitle {
+    text-align: center;
+    font-size: 2em;
+}
+
+#popupContent {
+    text-align: center;
+    font-size: 1.25em;
+}
+
+#popupClose {
+    position: absolute;
+    width: calc(100% - 2em);
+    font-size: 2em;
+    background-color: var(--button);
+    border: none;
+    cursor: pointer;
+    bottom: 1em;
+}
+
+#popupClose:hover {
+    background-color: var(--button-press);
+}
+
 .header {
     width: calc(100% - 2em);
     background-color: var(--acc3);
@@ -774,8 +912,9 @@ footer > a {
     background-color: var(--bg);
     display: flex;
     justify-content: space-between;
-    padding: 1em;
-    padding-bottom: 0;
+    padding: 0;
+    padding-top: 1em;
+    border-left: 2px solid transparent;
 }
 
 .messageDiv:hover {

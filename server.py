@@ -74,8 +74,6 @@ RATELIMITED_IPS = []
 
 DEFAULT_PFPS: list[str] = []
 
-
-
 def genSaveKey():
     key = Fernet.generate_key()
     with open(SAVE_KEY, "wb") as f:
@@ -173,6 +171,9 @@ def loadChats():
 
                     for msg in messages:
                         msg["content"] = fernet.decrypt(msg["content"]).decode("utf-16")
+                    
+                    if metadata["CID"] == 0:
+                        recipients = [x for x in range(len(users))]
 
                     chats.append({"CID": metadata["CID"], "Type": metadata["Type"], "Name": name, "Recipients": recipients, "messages": messages})
                     f.close()
@@ -449,6 +450,13 @@ def resizePfp(pfp: str):
 def validateUsername(username: str):
     return username.replace("_", "").isalnum() and username.isascii() and len(username) >= 3 and len(username) <= 30
 
+def checkFields(obj: dict, fields: list[str]):
+    for field in fields:
+        if not field in obj:
+            return False
+    
+    return True
+
 async def getAuth(connection: ServerConnection, request: Request):
     cookie_header = request.headers.get("Cookie")
     
@@ -486,6 +494,52 @@ async def checkAuthTokenEncrypted(ws: ServerConnection, authToken: str | None):
         return False
     return True
 
+async def handleEncryption(ws: ServerConnection, msgDecoded: dict):
+    clientKey = ec.EllipticCurvePublicKey.from_encoded_point(
+        ec.SECP256R1(),
+        bytes.fromhex(msgDecoded["publicKey"])
+    )
+
+    setattr(ws, "secretKey", PRIV_KEY.exchange(ec.ECDH(), clientKey))
+
+    await ws.send(orjson.dumps({"type":"encrypt-key-xch", "publicKey": PUB_KEY.hex()}), text=True)
+
+async def decrypt(ws: ServerConnection, msgDecoded: dict) -> tuple[dict, int] | tuple[None, None]:
+    key = getattr(ws, "secretKey", None)
+
+    if key == None:
+        logging.warning("[WS] Encrypted message sent without key!")
+        await ws.close()
+        return (None, None)
+    
+    if len(key) != 32:
+        await ws.close()
+        return (None, None)
+
+    try:
+        data = bytes.fromhex(msgDecoded["body"])
+        iv = bytes.fromhex(msgDecoded["iv"])
+
+        if len(data) < 16:
+            raise ValueError()
+        
+        if len(iv) != 12:
+            raise ValueError()
+
+        ciphertext = data[:-16]
+        tag = data[-16:]
+
+        decryptor = Cipher(algorithms.AES256(key), modes.GCM(iv, tag)).decryptor()
+        decryptedText = decryptor.update(ciphertext) + decryptor.finalize()
+        decryptedBody = orjson.loads(decryptedText)
+
+        return (decryptedBody, decryptedBody["trackerID"] if "trackerID" in decryptedBody else None)
+    except (InvalidTag, ValueError):
+        traceback.print_exc()
+        logging.error("Failed to decrypt message!")
+        await ws.close()
+        return (None, None)
+
 async def wsHandler(ws: ServerConnection):
     WS_CLIENTS.add(ws)
 
@@ -499,61 +553,21 @@ async def wsHandler(ws: ServerConnection):
             msgDecoded = orjson.loads(message)
 
             if "type" in msgDecoded and msgDecoded["type"] == "encrypt-key-xch":
-                clientKey = ec.EllipticCurvePublicKey.from_encoded_point(
-                    ec.SECP256R1(),
-                    bytes.fromhex(msgDecoded["publicKey"])
-                )
-
-                setattr(ws, "secretKey", PRIV_KEY.exchange(ec.ECDH(), clientKey))
-
-                await ws.send(orjson.dumps({"type":"encrypt-key-xch", "publicKey": PUB_KEY.hex()}), text=True)
+                await handleEncryption(ws, msgDecoded)
                 continue
             
             if "encryption" in msgDecoded and msgDecoded["encryption"] == "AES":
-                key = getattr(ws, "secretKey", None)
+                decryptedBody, trackerId = await decrypt(ws, msgDecoded)
 
-                if key == None:
-                    logging.warning("[WS] Encrypted message sent without key!")
-                    await ws.close()
-                    raise ConnectionRefusedError
-                
-                if len(key) != 32:
-                    await ws.close()
-                    raise ConnectionRefusedError
-
-                try:
-                    data = bytes.fromhex(msgDecoded["body"])
-                    iv = bytes.fromhex(msgDecoded["iv"])
-
-                    if len(data) < 16:
-                        raise ValueError()
-                    
-                    if len(iv) != 12:
-                        raise ValueError()
-
-                    ciphertext = data[:-16]
-                    tag = data[-16:]
-
-                    decryptor = Cipher(algorithms.AES256(key), modes.GCM(iv, tag)).decryptor()
-                    decryptedText = decryptor.update(ciphertext) + decryptor.finalize()
-                except (InvalidTag, ValueError):
-                    traceback.print_exc()
-                    logging.error("Failed to decrypt message!")
-                    await ws.close()
+                if decryptedBody == None:
                     break
-                
-                decryptedBody = orjson.loads(decryptedText)
-                trackerId = None
-
-                if "trackerID" in decryptedBody:
-                    trackerId = decryptedBody["trackerID"]
 
                 if not "type" in decryptedBody:
                     await wsSendEncrypted(ws, orjson.dumps({"type": "unknownRequest"}), trackerId)
                     continue
 
                 if decryptedBody["type"] == "login":
-                    if not "username" in decryptedBody or not "password" in decryptedBody:
+                    if not checkFields(decryptedBody, ["username", "password"]):
                         await wsSendEncrypted(ws, orjson.dumps({"type": "loginFailed"}))
                         continue
 
@@ -627,6 +641,16 @@ async def wsHandler(ws: ServerConnection):
                     RATELIMITED_IPS.append({"ip": ws.remote_address[0], "expire": time.time() + ACC_CREATION_COOLDOWN_SEC})
                     
                     await wsSendEncrypted(ws, orjson.dumps({"type": "signupSuccess", "redirect": "/signupSuccess.html"}))
+                    
+                    targetChat = None
+                    for cht in chats:
+                        if cht["CID"] == 0:
+                            cht["Recipients"] = [x for x in range(len(users))]
+                            targetChat = cht
+                    
+                    if targetChat:
+                        await wsBroadcastEncrypted(WS_CLIENTS, orjson.dumps({"type": "chatUpdate", "chat": targetChat}))
+
                 
                 if decryptedBody["type"] == "reqUser":
                     if await checkAuthTokenEncrypted(ws, authToken):
@@ -766,6 +790,10 @@ async def wsHandler(ws: ServerConnection):
                             continue
 
                         if len(decryptedBody["msg"]) > 4000:
+                            await wsSendEncrypted(ws, orjson.dumps({"type": "chatUpdateFailed"}), trackerId)
+                            continue
+
+                        if len(decryptedBody["embed"]) > 10:
                             await wsSendEncrypted(ws, orjson.dumps({"type": "chatUpdateFailed"}), trackerId)
                             continue
 
