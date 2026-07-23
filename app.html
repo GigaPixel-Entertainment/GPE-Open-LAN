@@ -933,6 +933,7 @@
         }
 
         var settingChatList = false
+        const chatMetaCache = []
         async function setChatList() {
             if (settingChatList) {
                 return
@@ -947,7 +948,14 @@
 
             for (let chatInd = 0; chatInd < chats.length; chatInd++) {
                 const chatID = chats[chatInd]
-                const chat = (await request(JSON.stringify({"type": "reqChatMeta", "CID": chatID})))["chat"]
+                let chat = null
+
+                if (chatMetaCache[chatID.toString()]) {
+                    chat = chatMetaCache[chatID.toString()]
+                } else {
+                    chat = (await request(JSON.stringify({"type": "reqChatMeta", "CID": chatID})))["chat"]
+                    chatMetaCache[chatID.toString()] = chat
+                }
 
                 if (chat == null) {
                     console.log("Failed to fetch chat " + chatID + ", pretending it doesn't exist")

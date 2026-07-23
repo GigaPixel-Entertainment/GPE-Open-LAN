@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-DEV = True
+DEV = False
 VER = "0.0.2"
 STAGE = "alpha"
 
