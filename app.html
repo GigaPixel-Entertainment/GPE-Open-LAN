@@ -82,7 +82,7 @@
                     <textarea id="bioArea" class="font white"></textarea>
                 </div>
             </div>
-            
+
             <div id="myProfileRight">
                 <div id="myProfileEditingList">
                     <div>
@@ -176,7 +176,7 @@
                 <button id="popupClose" onclick="closePopup()" class="font">Close</button>
             </div>
         </div>
-        
+
         <div id="loadingOverlay">
             <img src="Media/Logo.png">
             <p class="font white" id="loadingText">Connecting to server...</p>
@@ -244,7 +244,7 @@
 
         const friendSearchbar = document.getElementById("friendSearchbar")
         const friendSearchIcon = document.getElementById("friendSearchIcon")
-        
+
         const friendSearchResult = document.getElementById("friendSearchResult")
 
         const incomingList = document.getElementById("incomingList")
@@ -279,7 +279,7 @@
     </script>
     <script>
         // String comparison by aceakash (https://github.com/aceakash/string-similarity)
-        
+
         function compareTwoStrings(first, second) {
             first = first.replace(/\s+/g, '')
             second = second.replace(/\s+/g, '')
@@ -340,7 +340,7 @@
                     cached = false
                     for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
                         const cache = userInfoCache[cacheIndex];
-                        
+
                         if (cache["UID"] == uid) {
                             cached = true
                             break
@@ -352,7 +352,7 @@
                     }
                 }
             })
-            
+
             if (requiredUIDs.length > 0) {
                 usr = await request(JSON.stringify({"type": "reqUsersList", "users": requiredUIDs}))
 
@@ -498,7 +498,7 @@
                 const pfpWrapper = document.createElement("div")
                 pfpWrapper.style.height = "100%"
                 pfpWrapper.style.width = "fit-content"
-                
+
                 const pfpImg = document.createElement("img")
                 pfpImg.src = res["pfp"]
                 pfpImg.style.height = "100%"
@@ -706,7 +706,7 @@
         rplyTxt.addEventListener("mousedown", (e) => {
             if (msgRClickMenuMsg) {
                 replyingMsgId = msgRClickMenuMsg["MSGID"]
-                
+
                 reqUsrInfo(msgRClickMenuMsg["UID"]).then((usrInfo) => {
                     replyingPFP.src = usrInfo["pfp"]
                     replyingUsername.textContent = usrInfo["displayname"]
@@ -997,7 +997,7 @@
                 chatImgPic.style.height = "56px"
                 chatImgPic.style.borderRadius = "9999px"
                 chatImgPic.style.border = "2px solid var(--acc4)"
-                
+
                 const chatInfo = document.createElement("div")
                 chatInfo.style.width = "calc(100% - 60px)"
                 chatInfo.style.height = "100%"
@@ -1025,7 +1025,7 @@
                         chatImgPic.src = otherInfo["pfp"]
                     } else {
                         // Fallback
-                        
+
                         chatName.textContent = chat["name"]
                         chatImgPic.src = "Media/LogoSquare.png"
                     }
@@ -1218,7 +1218,7 @@
 
             for (let i = 0; i < recipientsInfo.length; i++) {
                 const recipient = recipientsInfo[i];
-                
+
                 if (recipient["username"] == username) {
                     return recipient
                 }
@@ -1290,7 +1290,7 @@
                     audio.controls = "true"
                     audio.title = filename
                     audio.src = "data:" + embedType + ";base64," + embedContent["embedContent"]
-                    
+
                     embeds.appendChild(audio)
                 } else if (embedType.startsWith("video/")) {
                     const video = document.createElement("video")
@@ -1303,7 +1303,7 @@
                     video.controls = "true"
                     video.title = filename
                     video.src = "data:" + embedType + ";base64," + embedContent["embedContent"]
-                    
+
                     embeds.appendChild(video)
                 } else if (embedType.startsWith("text/")) {
                     const text = document.createElement("div")
@@ -1329,12 +1329,12 @@
                     actualText.style.outline = "none"
                     actualText.classList = "font white"
                     actualText.readOnly = true
-                    
+
                     const contentBytes = Uint8Array.fromBase64(embedContent["embedContent"])
                     const content = textDecode(contentBytes)
 
                     actualText.textContent = content.slice(0, 1000)
-                    
+
                     if (contentBytes.length > 1000) {
                         actualText.textContent = actualText.textContent + "...\n(End of preview)"
                     }
@@ -1410,7 +1410,7 @@
                     title.download = filename
                     title.classList = "font white"
                     title.textContent = filename
-                    
+
                     generic.appendChild(title)
                     embeds.appendChild(generic)
                 }
@@ -1439,7 +1439,7 @@
                         editingMsgCurr = ""
                         e.preventDefault()
                     }
-                    
+
                     if (e.key == "Escape") {
                         editingMsgId = -1
                         origEditingMsg = ""
@@ -1447,7 +1447,7 @@
                         setChat(chatCache)
                     }
                 })
-                
+
                 return msgT
             }
 
@@ -1484,18 +1484,23 @@
                     wordE.style.whiteSpace = "pre-wrap"
 
                     if (word.startsWith("@")) {
-                        const usrInfo = await getUsernameInChat(word.split("@")[1])
+                        const mentionFor = word.split("@")[1]
+                        const usrInfo = await getUsernameInChat(mentionFor)
+                        const isValidMention = mentionFor == "everyone" || usrInfo
 
-                        if (usrInfo) {
+                        if (isValidMention) {
+                            const isForMe =  mentionFor == "everyone" || usrInfo["UID"] == currUID
+                            const mentionDisplay = usrInfo ? usrInfo["displayname"] : mentionFor
+
                             wordE.style.backgroundColor = "var(--highlight)"
                             wordE.style.borderRadius = "8px"
                             wordE.style.paddingLeft = "0.5em"
                             wordE.style.paddingRight = "0.5em"
                             wordE.style.marginRight = "0.5em"
                             wordE.style.cursor = "pointer"
-                            wordE.textContent = "@" + usrInfo["displayname"]
+                            wordE.textContent = "@" + mentionDisplay
 
-                            if (usrInfo["UID"] == currUID) {
+                            if (isForMe) {
                                 msgP.dataset.highlighted = true
                             }
                         }
@@ -1528,7 +1533,7 @@
             if (message["embed"] && message["embed"].length > 0) {
                 await evalEmbeds(message, msgP)
             }
-            
+
             return msgP
         }
 
@@ -1559,7 +1564,7 @@
                 replyToHead.style.transform = "translateY(-125%)"
                 replyToHead.style.display = "flex"
                 replyToHead.style.flexDirection = "row"
-                
+
                 const replyPfp = document.createElement("img")
                 replyPfp.style.aspectRatio = 1
                 replyPfp.style.height = "100%"
@@ -1771,7 +1776,7 @@
             let messageDiv = null
 
             if (lastMsg) {
-                if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60) {
+                if (message["UID"] == lastMsg["UID"] && message["time"] - lastMsg["time"] < 10*60 && lastMsg["time"] % 24*60*60 <= message["time"] % 24*60*60) {
                     if (message["replyTo"] && message["replyTo"] != -1) {
                         messageDiv = await genFullMsg(userInfos, message)
                     } else {
@@ -1862,7 +1867,7 @@
 
             if (chat["messages"].length > 100) {
                 const len = chat["messages"].length
-                
+
                 chat["messages"].splice(0, len - 100 * (currPage + 1))
                 chat["messages"].splice(100, len)
             }
@@ -2000,7 +2005,7 @@
             updated = false
             for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
                 const cacheItem = userInfoCache[cacheIndex];
-                
+
                 if (cacheItem["UID"] == resp["UID"]) {
                     cacheItem["displayname"] = resp["Displayname"]
                     updated = true
@@ -2024,7 +2029,7 @@
             updated = false
             for (let cacheIndex = 0; cacheIndex < userInfoCache.length; cacheIndex++) {
                 const cacheItem = userInfoCache[cacheIndex];
-                
+
                 if (cacheItem["UID"] == resp["UID"]) {
                     cacheItem["pfp"] = resp["PFP"]
                     updated = true
@@ -2425,7 +2430,7 @@
 
                         ws.onerror = (error) => {
                             console.error("WebSocket Error: " + error);
-                            
+
                         };
 
                         ws.onclose = (event) => {
@@ -2548,7 +2553,7 @@
 
                 for (let index = 0; index < files.length; index++) {
                     const file = files[index];
-                    
+
                     if (file.size > (25*1024*1024)) {
                         openPopup("Woah there!", "That file exceeded the max size of 25MB!")
                         continue
