@@ -1,10 +1,13 @@
 # Copyright (C) 2026  GigaPixel Entertainment
 # Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
 
-from cryptography.fernet import Fernet
+"""Script to delete a saved user"""
+
 import pathlib
-import msgpack
 import sys
+
+from cryptography.fernet import Fernet
+import msgpack
 
 CWD = pathlib.Path(__file__).resolve().parent
 USERS_DIR = CWD / "Users/"

@@ -1,10 +1,13 @@
 # Copyright (C) 2026  GigaPixel Entertainment
 # Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
 
-from cryptography.fernet import Fernet
+"""Script to edit a saved user"""
+
 import pathlib
-import msgpack
 import sys
+
+from cryptography.fernet import Fernet
+import msgpack
 
 CWD = pathlib.Path(__file__).resolve().parent
 USERS_DIR = CWD / "Users/"
@@ -28,8 +31,9 @@ with open(USERS_DIR / f"{username}.usr", "rb+") as f:
     userData = msgpack.unpackb(fernet.decrypt(f.read()))
 
     print(userData)
-    #userData["UID"] = 3
-    #print(userData)
+    # EDITING MAGIC
+    # userData["Displayname"] = "Bob"
+    print(userData)
 
     f.seek(0)
     f.write(fernet.encrypt(msgpack.packb(userData)))

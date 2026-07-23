@@ -1,8 +1,13 @@
+# Copyright (C) 2026  GigaPixel Entertainment
+# Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
+
+"""Configuration file for Open-LAN"""
+
 import logging
 import pathlib
 
-DEV = False
-VER = "0.0.2"
+DEV = True
+VER = "0.0.3"
 STAGE = "alpha"
 
 PORT = 33333

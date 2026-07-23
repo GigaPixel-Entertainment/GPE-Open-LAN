@@ -1,11 +1,14 @@
 # Copyright (C) 2026  GigaPixel Entertainment
 # Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
 
-from cryptography.fernet import Fernet
+"""Script to create a new chat"""
+
 import pathlib
-import msgpack
 import time
 import sys
+
+from cryptography.fernet import Fernet
+import msgpack
 
 CWD = pathlib.Path(__file__).resolve().parent
 CHATS_DIR = CWD / "Chats/"

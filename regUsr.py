@@ -1,10 +1,13 @@
 # Copyright (C) 2026  GigaPixel Entertainment
 # Licensed under the GNU General Public License v3, see <https://www.gnu.org/licenses/>.
 
+"""Script to register a new user"""
+
 import pathlib
+import time
+
 import msgpack
 import bcrypt
-import time
 
 CWD = pathlib.Path(__file__).resolve().parent
 USERS_DIR = CWD / "Users/"
