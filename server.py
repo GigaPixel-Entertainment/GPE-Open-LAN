@@ -329,7 +329,7 @@ def handleRequest(sk: socket.socket):
     request = sk.recv(4096)
     parsed = httphelper.HTTPRequestParser(request)
 
-    if parsed.errorCode:
+    if parsed.error_code:
         logging.error("[MAIN] Failed to parse %s", request)
         closeSocket(sk)
         return
